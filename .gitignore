@@ -1,0 +1,12 @@
+server/node_modules/
+studyassist/node_modules/
+
+server/.env
+studyassist/.env
+.env
+.env.*
+
+server/npm-debug.log*
+studyassist/npm-debug.log*
+
+studyassist/dist/
