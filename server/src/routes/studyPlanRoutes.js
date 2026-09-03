@@ -1,6 +1,8 @@
 import express from "express";
+import "dotenv/config";
 import { GoogleGenAI } from "@google/genai";
 import { supabase } from "../supabase.js";
+import { recordAiUsage } from "../middleware/aiUsage.js";
 
 const router = express.Router();
 
@@ -62,9 +64,23 @@ router.post("/generate", async (req, res) => {
       });
     }
 
+
+    if (subject.trim().length > 80) {
+      return res.status(400).json({
+        error: "The subject must be 80 characters or fewer",
+      });
+    }
+
     if (!topics || typeof topics !== "string") {
       return res.status(400).json({
         error: "Study topics are required",
+      });
+    }
+
+
+    if (!topics.trim() || topics.trim().length > 4000) {
+      return res.status(400).json({
+        error: "Study topics must be between 1 and 4000 characters",
       });
     }
 
@@ -152,6 +168,8 @@ Rules:
     if (error) {
       throw error;
     }
+
+    await recordAiUsage(req.user.id, "study_plan");
 
     res.status(201).json({
       message: "Study plan created",

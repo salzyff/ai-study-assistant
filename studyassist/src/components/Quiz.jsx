@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { SUBJECTS } from "../constants/subjects";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -170,12 +171,11 @@ function Quiz({ accessToken }) {
                   setSubject(event.target.value)
                 }
               >
-                <option value="Mathematics">Mathematics</option>
-                <option value="English">English</option>
-                <option value="Biology">Biology</option>
-                <option value="Chemistry">Chemistry</option>
-                <option value="Physics">Physics</option>
-                <option value="Economics">Economics</option>
+                {SUBJECTS.map((subjectOption) => (
+                  <option value={subjectOption} key={subjectOption}>
+                    {subjectOption}
+                  </option>
+                ))}
               </select>
             </div>
   

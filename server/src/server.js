@@ -7,12 +7,24 @@ import { requireAuth } from "./middleware/requireAuth.js";
 import taskRoutes from "./routes/taskRoutes.js";
 import studyPlanRoutes from "./routes/studyPlanRoutes.js";
 import quizRoutes from "./routes/quizRoutes.js";
+import noteRoutes from "./routes/noteRoutes.js";
+import flashcardRoutes from "./routes/flashcardRoutes.js";
+import progressRoutes from "./routes/progressRoutes.js";
+import dashboardRoutes from "./routes/dashboardRoutes.js";
+import learningRoutes from "./routes/learningRoutes.js";
+import goalRoutes from "./routes/goalRoutes.js";
+import questionBankRoutes from "./routes/questionBankRoutes.js";
 import helmet from "helmet";
 import {
   corsOptions,
   apiLimiter,
   aiLimiter,
 } from "./middleware/security.js";
+import {
+  dailyAiLimit,
+  getAiUsage,
+  recordAiUsage,
+} from "./middleware/aiUsage.js";
 
 dotenv.config();
 
@@ -92,9 +104,16 @@ app.use("/api", apiLimiter);
 app.use("/api", requireAuth);
 
 // Gemini-powered routes have stricter limits.
-app.use("/api/chat", aiLimiter);
-app.use("/api/study-plans", aiLimiter);
-app.use("/api/quizzes/generate", aiLimiter);
+app.use("/api/chat", aiLimiter, dailyAiLimit);
+app.use("/api/study-plans", aiLimiter, dailyAiLimit);
+app.use("/api/quizzes/generate", aiLimiter, dailyAiLimit);
+app.use("/api/tasks/:taskId/study-session", aiLimiter, dailyAiLimit);
+app.use("/api/notes/:noteId/ask", aiLimiter);
+app.use("/api/notes/:noteId/summarize", aiLimiter);
+app.use("/api/flashcards/generate", aiLimiter);
+app.use("/api/learning/teach-back", aiLimiter, dailyAiLimit);
+app.use("/api/learning/mark-written", aiLimiter, dailyAiLimit);
+app.use("/api/question-bank/generate", aiLimiter, dailyAiLimit);
 
 // Create or continue a conversation
 app.post("/api/chat", async (req, res) => {
@@ -117,6 +136,18 @@ app.post("/api/chat", async (req, res) => {
     if (!cleanMessage) {
       return res.status(400).json({
         error: "The message cannot be empty",
+      });
+    }
+
+    if (cleanMessage.length > 6000) {
+      return res.status(400).json({
+        error: "The message must be 6000 characters or fewer",
+      });
+    }
+
+    if (typeof subject !== "string" || !subject.trim() || subject.length > 80) {
+      return res.status(400).json({
+        error: "The subject must be between 1 and 80 characters",
       });
     }
 
@@ -238,6 +269,8 @@ ${cleanMessage}
     if (updateError) {
       throw updateError;
     }
+
+    await recordAiUsage(req.user.id, `chat_${mode}`);
 
     res.json({
       sessionId: conversationId,
@@ -368,6 +401,22 @@ app.delete(
 app.use("/api/tasks", taskRoutes);
 app.use("/api/study-plans", studyPlanRoutes);
 app.use("/api/quizzes", quizRoutes);
+app.use("/api/notes", noteRoutes);
+app.use("/api/flashcards", flashcardRoutes);
+app.use("/api/progress", progressRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/learning", learningRoutes);
+app.use("/api/goals", goalRoutes);
+app.use("/api/question-bank", questionBankRoutes);
+
+app.get("/api/ai-usage", async (req, res) => {
+  try {
+    res.json({ usage: await getAiUsage(req.user.id) });
+  } catch (error) {
+    console.error("Load AI usage error:", error);
+    res.status(500).json({ error: "Could not load AI usage" });
+  }
+});
 
 app.use((req, res) => {
   res.status(404).json({
@@ -384,6 +433,18 @@ app.use((error, req, res, next) => {
   if (error.type === "entity.too.large") {
     return res.status(413).json({
       error: "Request body is too large",
+    });
+  }
+
+  if (error.code === "LIMIT_FILE_SIZE") {
+    return res.status(413).json({
+      error: "Uploaded file is too large",
+    });
+  }
+
+  if (error.statusCode) {
+    return res.status(error.statusCode).json({
+      error: error.message,
     });
   }
 

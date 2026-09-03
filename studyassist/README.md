@@ -1,16 +1,27 @@
-# React + Vite
+# StudyAI React app
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This Vite/React client connects to the StudyAI Express backend and Supabase authentication.
 
-Currently, two official plugins are available:
+## Run locally
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+1. Copy `.env.example` to `.env`.
+2. Add the Vite API URL, Supabase URL, and Supabase publishable key.
+3. Run `npm install`.
+4. Run `npm run dev`.
 
-## React Compiler
+Keep the backend running separately on the URL configured as `VITE_API_URL`.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Learning features
 
-## Expanding the ESLint configuration
+The Learning Center includes:
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- automatic mistake notebook
+- adaptive quizzes
+- weak-topic recommendations
+- daily revision queue
+- teach-back feedback
+- timed exam mode with corrections and history
+- quizzes generated from uploaded notes
+- original practice question bank
+- written-answer marking schemes
+- weekly study goals tied to real activity

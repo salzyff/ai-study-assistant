@@ -1,10 +1,17 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import Auth from "./components/Auth";
 import TaskPlanner from "./components/TaskPlanner";
 import { supabase } from "./supabase";
 import StudyPlanGenerator from "./components/StudyPlanGenerator";
 import Quiz from "./components/Quiz";
+import Notes from "./components/Notes";
+import Flashcards from "./components/Flashcards";
+import Progress from "./components/Progress";
+import Dashboard from "./components/Dashboard";
+import LearningCenter from "./components/LearningCenter";
+import DeleteConfirmation from "./components/DeleteConfirmation";
+import { SUBJECTS } from "./constants/subjects";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -51,17 +58,7 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (accessToken) {
-      loadConversations();
-    } else {
-      setConversations([]);
-      setMessages([]);
-      setSessionId(null);
-    }
-  }, [accessToken]);
-
-  function getAuthHeaders(includeJson = false) {
+  const getAuthHeaders = useCallback((includeJson = false) => {
     const headers = {
       Authorization: `Bearer ${accessToken}`,
     };
@@ -71,9 +68,9 @@ function App() {
     }
 
     return headers;
-  }
+  }, [accessToken]);
 
-  async function loadConversations() {
+  const loadConversations = useCallback(async () => {
     try {
       setError("");
 
@@ -91,7 +88,13 @@ function App() {
     } catch (requestError) {
       setError(requestError.message);
     }
-  }
+  }, [getAuthHeaders]);
+
+  useEffect(() => {
+    if (!accessToken) return undefined;
+    const timer = window.setTimeout(loadConversations, 0);
+    return () => window.clearTimeout(timer);
+  }, [accessToken, loadConversations]);
 
   async function openConversation(conversation) {
     try {
@@ -191,12 +194,6 @@ function App() {
   }
 
   async function deleteConversation(conversationId) {
-    const shouldDelete = window.confirm(
-      "Are you sure you want to delete this conversation?"
-    );
-
-    if (!shouldDelete) return;
-
     try {
       setError("");
 
@@ -234,6 +231,10 @@ function App() {
 
     if (logoutError) {
       setError(logoutError.message);
+    } else {
+      setConversations([]);
+      setMessages([]);
+      setSessionId(null);
     }
   }
 
@@ -306,15 +307,12 @@ function App() {
                 </span>
               </button>
 
-              <button
+              <DeleteConfirmation
                 className="delete-button"
-                type="button"
-                onClick={() =>
-                  deleteConversation(conversation.id)
-                }
-              >
-                ×
-              </button>
+                buttonLabel="×"
+                confirmation="Delete this conversation permanently?"
+                onConfirm={() => deleteConversation(conversation.id)}
+              />
             </div>
           ))}
 
@@ -347,7 +345,46 @@ function App() {
 
       {/* MAIN AREA */}
       <main className="main-area">
-      {activeTool === "quiz" ? (
+      {activeTool === "learning" ? (
+  <section>
+    <button type="button" onClick={() => setActiveTool(null)}>
+      ← Back to Dashboard
+    </button>
+    <LearningCenter accessToken={accessToken} />
+  </section>
+) : activeTool === "notes" ? (
+  <section>
+    <button type="button" onClick={() => setActiveTool(null)}>
+      ← Back to Dashboard
+    </button>
+    <h1>Notes and PDFs</h1>
+    <Notes accessToken={accessToken} />
+  </section>
+) : activeTool === "flashcards" ? (
+  <section>
+    <button type="button" onClick={() => setActiveTool(null)}>
+      ← Back to Dashboard
+    </button>
+    <h1>Flashcards</h1>
+    <Flashcards accessToken={accessToken} />
+  </section>
+) : activeTool === "progress" ? (
+  <section>
+    <button type="button" onClick={() => setActiveTool(null)}>
+      ← Back to Dashboard
+    </button>
+    <h1>Progress</h1>
+    <Progress accessToken={accessToken} />
+  </section>
+) : activeTool === "dashboard" ? (
+  <section>
+    <button type="button" onClick={() => setActiveTool(null)}>
+      ← Back to Dashboard
+    </button>
+    <h1>Dashboard Statistics</h1>
+    <Dashboard accessToken={accessToken} />
+  </section>
+) : activeTool === "quiz" ? (
   <section className="tool-page">
     <button
       className="back-button"
@@ -452,13 +489,11 @@ function App() {
                 setSubject(event.target.value)
               }
             >
-              <option value="General">General</option>
-              <option value="Mathematics">Mathematics</option>
-              <option value="English">English</option>
-              <option value="Biology">Biology</option>
-              <option value="Chemistry">Chemistry</option>
-              <option value="Physics">Physics</option>
-              <option value="Economics">Economics</option>
+              {SUBJECTS.map((subjectOption) => (
+                <option value={subjectOption} key={subjectOption}>
+                  {subjectOption}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -693,6 +728,15 @@ function App() {
               </div>
             </div>
 
+          </div>
+
+          <div>
+            <h3>More study tools</h3>
+            <button type="button" onClick={() => setActiveTool("notes")}>Notes and PDFs</button>{" "}
+            <button type="button" onClick={() => setActiveTool("flashcards")}>Flashcards</button>{" "}
+            <button type="button" onClick={() => setActiveTool("progress")}>Progress</button>{" "}
+            <button type="button" onClick={() => setActiveTool("dashboard")}>Dashboard and AI usage</button>
+            {" "}<button type="button" onClick={() => setActiveTool("learning")}>Learning Center</button>
           </div>
 
         </section>

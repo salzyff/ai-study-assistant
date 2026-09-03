@@ -1,0 +1,18 @@
+export const SUBJECTS = [
+  "General",
+  "Mathematics",
+  "Further Mathematics",
+  "English Language",
+  "Physics",
+  "Chemistry",
+  "Biology",
+  "Computer Science",
+  "Digital Technology",
+  "Economics",
+  "Geography",
+  "History",
+  "Government",
+  "Literature",
+  "Accounting",
+  "Civic Education",
+];
