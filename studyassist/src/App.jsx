@@ -15,6 +15,7 @@ function App() {
   const [message, setMessage] = useState("");
   const [subject, setSubject] = useState("General");
   const [mode, setMode] = useState("ask");
+  const [activeTool, setActiveTool] = useState(null);
   const [sessionId, setSessionId] = useState(null);
 
   const [messages, setMessages] = useState([]);
@@ -47,9 +48,7 @@ function App() {
       }
     );
 
-    return () => {
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -78,19 +77,14 @@ function App() {
     try {
       setError("");
 
-      const response = await fetch(
-        `${API_URL}/api/conversations`,
-        {
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetch(`${API_URL}/api/conversations`, {
+        headers: getAuthHeaders(),
+      });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(
-          data.error || "Could not load conversations"
-        );
+        throw new Error(data.error || "Could not load conversations");
       }
 
       setConversations(data.conversations);
@@ -135,9 +129,7 @@ function App() {
 
     const cleanMessage = message.trim();
 
-    if (!cleanMessage || loading) {
-      return;
-    }
+    if (!cleanMessage || loading) return;
 
     setError("");
     setLoading(true);
@@ -203,9 +195,7 @@ function App() {
       "Are you sure you want to delete this conversation?"
     );
 
-    if (!shouldDelete) {
-      return;
-    }
+    if (!shouldDelete) return;
 
     try {
       setError("");
@@ -248,7 +238,15 @@ function App() {
   }
 
   if (authLoading) {
-    return <p>Loading...</p>;
+    return (
+      <div className="loading-screen">
+        <div className="loading-card">
+          <div className="loading-icon">🧠</div>
+          <h2>AI Study Assistant</h2>
+          <p>Loading your study space...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!session) {
@@ -256,131 +254,455 @@ function App() {
   }
 
   return (
-    <main>
-      <h1>AI Study Assistant</h1>
+    <div className="app-shell">
 
-      <p>Logged in as: {session.user.email}</p>
+      {/* SIDEBAR */}
+      <aside className="sidebar">
 
-      <button type="button" onClick={logOut}>
-        Log out
-      </button>
+        <div className="brand">
+          <div className="brand-icon">🧠</div>
 
-      <aside>
-        <h2>Conversation History</h2>
+          <div>
+            <h2>StudyAI</h2>
+            <span>Your study companion</span>
+          </div>
+        </div>
 
-        <button type="button" onClick={startNewChat}>
-          New chat
+        <button
+          className="new-chat-button"
+          type="button"
+          onClick={startNewChat}
+        >
+          <span>＋</span>
+          New Chat
         </button>
 
-        {conversations.length === 0 && (
-          <p>No saved conversations yet.</p>
-        )}
+        <div className="history-header">
+          <span>Recent chats</span>
+        </div>
 
-        <ul>
+        <div className="conversation-list">
+
+          {conversations.length === 0 && (
+            <p className="empty-history">
+              Your conversations will appear here.
+            </p>
+          )}
+
           {conversations.map((conversation) => (
-            <li key={conversation.id}>
+            <div
+              className="conversation-item"
+              key={conversation.id}
+            >
               <button
                 type="button"
-                onClick={() =>
-                  openConversation(conversation)
-                }
+                onClick={() => openConversation(conversation)}
               >
-                {conversation.subject} — {conversation.mode}
+                <span className="chat-icon">💬</span>
+
+                <span className="conversation-text">
+                  <strong>{conversation.subject}</strong>
+                  <small>{conversation.mode}</small>
+                </span>
               </button>
 
               <button
+                className="delete-button"
                 type="button"
                 onClick={() =>
                   deleteConversation(conversation.id)
                 }
               >
-                Delete
+                ×
               </button>
-            </li>
+            </div>
           ))}
-        </ul>
+
+        </div>
+
+        <div className="sidebar-bottom">
+
+          <div className="user-card">
+            <div className="avatar">
+              {session.user.email?.charAt(0).toUpperCase()}
+            </div>
+
+            <div className="user-info">
+              <strong>Student</strong>
+              <span>{session.user.email}</span>
+            </div>
+          </div>
+
+          <button
+            className="logout-button"
+            type="button"
+            onClick={logOut}
+          >
+            ⇥ Log out
+          </button>
+
+        </div>
+
       </aside>
 
-      <section>
-        <label htmlFor="subject">Subject</label>
+      {/* MAIN AREA */}
+      <main className="main-area">
+      {activeTool === "quiz" ? (
+  <section className="tool-page">
+    <button
+      className="back-button"
+      onClick={() => setActiveTool(null)}
+    >
+      ← Back to Dashboard
+    </button>
 
-        <select
-          id="subject"
-          value={subject}
-          onChange={(event) =>
-            setSubject(event.target.value)
-          }
-        >
-          <option value="General">General</option>
-          <option value="Mathematics">Mathematics</option>
-          <option value="English">English</option>
-          <option value="Biology">Biology</option>
-          <option value="Chemistry">Chemistry</option>
-          <option value="Physics">Physics</option>
-          <option value="Economics">Economics</option>
-        </select>
+    <div className="tool-page-header">
+      <div>
+        <h1>Quiz 📝</h1>
+        <p>Test your knowledge and improve your understanding.</p>
+      </div>
+    </div>
 
-        <label htmlFor="mode">Study mode</label>
+    <div className="tool-page-content quiz-page-content">
+  <div className="quiz-intro">
+    <div className="quiz-intro-icon">🧠</div>
+    <div>
+      <h2>Challenge Yourself</h2>
+      <p>
+        Test what you know, find your weak areas, and improve your
+        understanding.
+      </p>
+    </div>
+  </div>
 
-        <select
-          id="mode"
-          value={mode}
-          onChange={(event) => setMode(event.target.value)}
-        >
-          <option value="ask">Ask</option>
-          <option value="explain">Explain</option>
-          <option value="summarize">Summarize</option>
-          <option value="practice">Practice</option>
-        </select>
-      </section>
+  <Quiz accessToken={accessToken} />
+</div>
+  </section>
+) : activeTool === "plan" ? (
+  <section className="tool-page">
 
-      <section>
-        {historyLoading && <p>Loading conversation...</p>}
+    <button
+      className="back-button"
+      onClick={() => setActiveTool(null)}
+    >
+      ← Back to Dashboard
+    </button>
 
-        {!historyLoading && messages.length === 0 && (
-          <p>Choose a subject and ask your first question.</p>
-        )}
+    <div className="tool-page-header">
+      <div>
+        <h1>Study Plan 📅</h1>
+        <p>Organize your learning and study smarter.</p>
+      </div>
+    </div>
 
-        {messages.map((chatMessage, index) => (
-          <article key={chatMessage.id || index}>
-            <strong>
-              {chatMessage.role === "student"
-                ? "You"
-                : "Study Assistant"}
-            </strong>
-
-            <ReactMarkdown>
-              {chatMessage.content}
-            </ReactMarkdown>
-          </article>
-        ))}
-
-        {loading && <p>Study Assistant is thinking...</p>}
-        {error && <p>Error: {error}</p>}
-      </section>
-
-      <form onSubmit={sendMessage}>
-        <textarea
-          value={message}
-          onChange={(event) =>
-            setMessage(event.target.value)
-          }
-          placeholder="Ask a study question..."
-          rows="4"
-        />
-
-        <button
-          type="submit"
-          disabled={loading || !message.trim()}
-        >
-          {loading ? "Sending..." : "Send"}
-        </button>
-      </form>
-      <Quiz accessToken={accessToken} />
-
+    <div className="tool-page-content">
       <StudyPlanGenerator accessToken={accessToken} />
+    </div>
+
+  </section>
+) : activeTool === "task" ? (
+  <section className="tool-page">
+
+    <button
+      className="back-button"
+      onClick={() => setActiveTool(null)}
+    >
+      ← Back to Dashboard
+    </button>
+
+    <div className="tool-page-header">
+      <div>
+        <h1>Task Planner ✅</h1>
+        <p>Keep track of your study tasks and stay organized.</p>
+      </div>
+    </div>
+
+    <div className="tool-page-content">
       <TaskPlanner accessToken={accessToken} />
-    </main>
+    </div>
+
+  </section>
+) : (
+  <>   
+
+        <header className="topbar">
+
+          <div>
+            <h1>AI Study Assistant</h1>
+            <p>Learn smarter. Study better. 🚀</p>
+          </div>
+
+          <div className="status">
+            <span className="status-dot"></span>
+            AI Online
+          </div>
+
+        </header>
+
+        {/* CONTROLS */}
+        <section className="study-controls">
+
+          <div className="control-group">
+            <label htmlFor="subject">📚 Subject</label>
+
+            <select
+              id="subject"
+              value={subject}
+              onChange={(event) =>
+                setSubject(event.target.value)
+              }
+            >
+              <option value="General">General</option>
+              <option value="Mathematics">Mathematics</option>
+              <option value="English">English</option>
+              <option value="Biology">Biology</option>
+              <option value="Chemistry">Chemistry</option>
+              <option value="Physics">Physics</option>
+              <option value="Economics">Economics</option>
+            </select>
+          </div>
+
+          <div className="control-group">
+            <label htmlFor="mode">🎯 Study Mode</label>
+
+            <select
+              id="mode"
+              value={mode}
+              onChange={(event) =>
+                setMode(event.target.value)
+              }
+            >
+              <option value="ask">Ask</option>
+              <option value="explain">Explain</option>
+              <option value="summarize">Summarize</option>
+              <option value="practice">Practice</option>
+            </select>
+          </div>
+
+        </section>
+
+        {/* CHAT */}
+        <section className="chat-container">
+  <div className="chat-header">
+    <div className="ai-avatar">🧠</div>
+    <div className="chat-title">
+      <strong>Study Assistant</strong>
+      <span>Your personal AI learning companion</span>
+    </div>
+    <div className="chat-status">
+      <span className="status-dot"></span>
+      Online
+    </div>
+  </div>
+
+          <div className="messages">
+
+            {historyLoading && (
+              <div className="system-message">
+                Loading conversation...
+              </div>
+            )}
+
+            {!historyLoading && messages.length === 0 && (
+              <div className="welcome">
+
+                <div className="welcome-icon">✨</div>
+
+                <h2>What would you like to learn?</h2>
+
+                <p>
+                  Ask me a question, request an explanation,
+                  summarize a topic, or practice your knowledge.
+                </p>
+
+                <div className="suggestions">
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setMessage(
+                        "Explain this topic to me in simple terms."
+                      )
+                    }
+                  >
+                    💡 Explain a topic
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setMessage(
+                        "Give me practice questions on this subject."
+                      )
+                    }
+                  >
+                    📝 Practice questions
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setMessage(
+                        "Summarize the most important things I need to know."
+                      )
+                    }
+                  >
+                    📖 Summarize
+                  </button>
+
+                </div>
+
+              </div>
+            )}
+
+            {messages.map((chatMessage, index) => (
+
+              <article
+                className={`message ${
+                  chatMessage.role === "student"
+                    ? "student-message"
+                    : "assistant-message"
+                }`}
+                key={chatMessage.id || index}
+              >
+
+                <div className="message-avatar">
+                  {chatMessage.role === "student"
+                    ? "👤"
+                    : "🧠"}
+                </div>
+
+                <div className="message-content">
+
+                  <strong>
+                    {chatMessage.role === "student"
+                      ? "You"
+                      : "Study Assistant"}
+                  </strong>
+
+                  <ReactMarkdown>
+                    {chatMessage.content}
+                  </ReactMarkdown>
+
+                </div>
+
+              </article>
+
+            ))}
+
+            {loading && (
+              <div className="typing">
+
+                <div className="message-avatar">🧠</div>
+
+                <div className="typing-bubble">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+
+              </div>
+            )}
+
+            {error && (
+              <div className="error-message">
+                ⚠️ {error}
+              </div>
+            )}
+
+          </div>
+
+          {/* MESSAGE INPUT */}
+          <form
+            className="message-form"
+            onSubmit={sendMessage}
+          >
+
+
+<textarea
+  value={message}
+  onChange={(event) =>
+    setMessage(event.target.value)
+  }
+  onKeyDown={(event) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      sendMessage(event);
+    }
+  }}
+  placeholder="Ask anything about your studies..."
+  rows="1"
+/>
+
+
+            <button
+              type="submit"
+              disabled={loading || !message.trim()}
+            >
+              {loading ? "..." : "➤"}
+            </button>
+
+          </form>
+
+          <p className="input-hint">
+            AI can make mistakes. Always verify important information.
+          </p>
+
+        </section>
+
+        {/* TOOLS */}
+        <section className="study-tools">
+
+          <div className="tool-heading">
+            <h2>Study Tools</h2>
+            <p>Make your study sessions more productive.</p>
+          </div>
+
+          <div className="tool-grid">
+
+          <div
+    className="tool-card quiz-card"
+    onClick={() => setActiveTool("quiz")}
+>
+              <div className="tool-icon">📝</div>
+              <div>
+                <h3>Quiz</h3>
+                <p>Test your knowledge.</p>
+              </div>
+            </div>
+
+            <div
+  className="tool-card plan-card"
+  onClick={() => setActiveTool("plan")}
+>
+              <div className="tool-icon">📅</div>
+              <div>
+                <h3>Study Plan</h3>
+                <p>Organize your learning.</p>
+              </div>
+            </div>
+
+            <div
+  className="tool-card task-card"
+  onClick={() => setActiveTool("task")}
+>
+              <div className="tool-icon">✅</div>
+              <div>
+                <h3>Task Planner</h3>
+                <p>Stay on top of your tasks.</p>
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+      
+  </>
+)}
+
+      </main>
+
+    </div>
   );
 }
 

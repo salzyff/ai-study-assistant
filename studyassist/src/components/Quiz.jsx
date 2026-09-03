@@ -145,169 +145,223 @@ function Quiz({ accessToken }) {
       (question) => answers[question.id] !== undefined
     );
 
-  return (
-    <section>
-      <h2>Interactive Quiz</h2>
-
-      {!quiz && (
-        <form onSubmit={generateQuiz}>
+    return (
+      <section className="quiz-app">
+  
+        <div className="quiz-app-title">
           <div>
-            <label htmlFor="quiz-subject">Subject</label>
-
-            <select
-              id="quiz-subject"
-              value={subject}
-              onChange={(event) =>
-                setSubject(event.target.value)
-              }
-            >
-              <option value="Mathematics">Mathematics</option>
-              <option value="English">English</option>
-              <option value="Biology">Biology</option>
-              <option value="Chemistry">Chemistry</option>
-              <option value="Physics">Physics</option>
-              <option value="Economics">Economics</option>
-            </select>
+            <h2>Interactive Quiz</h2>
+            <p>Choose a subject and challenge yourself.</p>
           </div>
-
-          <div>
-            <label htmlFor="quiz-topic">Topic</label>
-
-            <input
-              id="quiz-topic"
-              type="text"
-              value={topic}
-              onChange={(event) =>
-                setTopic(event.target.value)
-              }
-              placeholder="Photosynthesis"
-              required
-            />
-          </div>
-
-          <div>
-            <label htmlFor="question-count">
-              Number of questions
-            </label>
-
-            <input
-              id="question-count"
-              type="number"
-              min="3"
-              max="10"
-              value={numberOfQuestions}
-              onChange={(event) =>
-                setNumberOfQuestions(event.target.value)
-              }
-            />
-          </div>
-
-          <button type="submit" disabled={loading}>
-            {loading ? "Generating..." : "Generate quiz"}
-          </button>
-        </form>
-      )}
-
-      {error && <p>Error: {error}</p>}
-
-      {quiz && (
-        <>
-          <h3>
-            {quiz.subject}: {quiz.topic}
-          </h3>
-
-          {questions.map((question, questionIndex) => {
-            const result = results.find(
-              (item) => item.questionId === question.id
-            );
-
-            return (
-              <article key={question.id}>
-                <h4>
-                  {questionIndex + 1}. {question.question}
-                </h4>
-
-                {question.options.map(
-                  (option, optionIndex) => (
-                    <label
-                      key={`${question.id}-${optionIndex}`}
-                    >
-                      <input
-                        type="radio"
-                        name={question.id}
-                        checked={
-                          answers[question.id] === optionIndex
-                        }
-                        disabled={score !== null}
-                        onChange={() =>
-                          selectAnswer(
-                            question.id,
-                            optionIndex
-                          )
-                        }
-                      />
-
-                      {option}
-                    </label>
-                  )
-                )}
-
-                {result && (
-                  <div>
-                    <p>
-                      {result.isCorrect
-                        ? "Correct"
-                        : "Incorrect"}
-                    </p>
-
-                    {!result.isCorrect && (
-                      <p>
-                        Correct answer:{" "}
-                        {
-                          result.options[
-                            result.correctOption
-                          ]
-                        }
-                      </p>
-                    )}
-
-                    <p>{result.explanation}</p>
-                  </div>
-                )}
-              </article>
-            );
-          })}
-
-          {score === null ? (
-            <button
-              type="button"
-              onClick={submitQuiz}
-              disabled={!everyQuestionAnswered || loading}
-            >
-              {loading ? "Marking..." : "Submit quiz"}
-            </button>
-          ) : (
-            <section>
-              <h3>Quiz Result</h3>
-
-              <p>
-                Score: {score.correct}/{score.total}
-              </p>
-
-              <p>Percentage: {score.percentage}%</p>
-
-              <button
-                type="button"
-                onClick={startAnotherQuiz}
+  
+          <div className="quiz-badge">🧠 AI Quiz</div>
+        </div>
+  
+        {!quiz && (
+          <form className="quiz-generator" onSubmit={generateQuiz}>
+  
+            <div className="quiz-field">
+              <label htmlFor="quiz-subject">📚 Subject</label>
+  
+              <select
+                id="quiz-subject"
+                value={subject}
+                onChange={(event) =>
+                  setSubject(event.target.value)
+                }
               >
-                Start another quiz
+                <option value="Mathematics">Mathematics</option>
+                <option value="English">English</option>
+                <option value="Biology">Biology</option>
+                <option value="Chemistry">Chemistry</option>
+                <option value="Physics">Physics</option>
+                <option value="Economics">Economics</option>
+              </select>
+            </div>
+  
+            <div className="quiz-field">
+              <label htmlFor="quiz-topic">📖 Topic</label>
+  
+              <input
+                id="quiz-topic"
+                type="text"
+                value={topic}
+                onChange={(event) =>
+                  setTopic(event.target.value)
+                }
+                placeholder="e.g. Photosynthesis"
+                required
+              />
+            </div>
+  
+            <div className="quiz-field">
+              <label htmlFor="question-count">🔢 Questions</label>
+  
+              <input
+                id="question-count"
+                type="number"
+                min="3"
+                max="10"
+                value={numberOfQuestions}
+                onChange={(event) =>
+                  setNumberOfQuestions(event.target.value)
+                }
+              />
+            </div>
+  
+            <button
+              className="generate-quiz-button"
+              type="submit"
+              disabled={loading}
+            >
+              {loading ? "Generating..." : "✨ Generate Quiz"}
+            </button>
+  
+          </form>
+        )}
+  
+        {error && (
+          <div className="quiz-error">
+            ⚠️ {error}
+          </div>
+        )}
+  
+        {quiz && (
+          <div className="quiz-session">
+  
+            <div className="quiz-session-header">
+              <div>
+                <span>{quiz.subject}</span>
+                <h3>{quiz.topic}</h3>
+              </div>
+  
+              <div className="question-count">
+                {questions.length} Questions
+              </div>
+            </div>
+  
+            {questions.map((question, questionIndex) => {
+              const result = results.find(
+                (item) => item.questionId === question.id
+              );
+  
+              return (
+                <article
+                  className="quiz-question"
+                  key={question.id}
+                >
+  
+                  <div className="question-number">
+                    Question {questionIndex + 1}
+                  </div>
+  
+                  <h4>{question.question}</h4>
+  
+                  <div className="quiz-options">
+                    {question.options.map(
+                      (option, optionIndex) => (
+                        <label
+                          className={`quiz-option ${
+                            answers[question.id] === optionIndex
+                              ? "selected"
+                              : ""
+                          }`}
+                          key={`${question.id}-${optionIndex}`}
+                        >
+                          <input
+                            type="radio"
+                            name={question.id}
+                            checked={
+                              answers[question.id] === optionIndex
+                            }
+                            disabled={score !== null}
+                            onChange={() =>
+                              selectAnswer(
+                                question.id,
+                                optionIndex
+                              )
+                            }
+                          />
+  
+                          <span>{option}</span>
+                        </label>
+                      )
+                    )}
+                  </div>
+  
+                  {result && (
+                    <div
+                      className={`quiz-result ${
+                        result.isCorrect
+                          ? "correct"
+                          : "incorrect"
+                      }`}
+                    >
+                      <strong>
+                        {result.isCorrect
+                          ? "✓ Correct!"
+                          : "✕ Incorrect"}
+                      </strong>
+  
+                      {!result.isCorrect && (
+                        <p>
+                          Correct answer:{" "}
+                          {
+                            result.options[
+                              result.correctOption
+                            ]
+                          }
+                        </p>
+                      )}
+  
+                      <p>{result.explanation}</p>
+                    </div>
+                  )}
+  
+                </article>
+              );
+            })}
+  
+            {score === null ? (
+              <button
+                className="submit-quiz-button"
+                type="button"
+                onClick={submitQuiz}
+                disabled={!everyQuestionAnswered || loading}
+              >
+                {loading ? "Marking..." : "Submit Quiz →"}
               </button>
-            </section>
-          )}
-        </>
-      )}
-    </section>
-  );
+            ) : (
+              <section className="quiz-final-result">
+  
+                <div className="result-icon">🎉</div>
+  
+                <h3>Quiz Complete!</h3>
+  
+                <p className="final-score">
+                  {score.correct}/{score.total}
+                </p>
+  
+                <p>
+                  You scored <strong>{score.percentage}%</strong>
+                </p>
+  
+                <button
+                  className="another-quiz-button"
+                  type="button"
+                  onClick={startAnotherQuiz}
+                >
+                  📝 Start Another Quiz
+                </button>
+  
+              </section>
+            )}
+  
+          </div>
+        )}
+  
+      </section>
+    );
 }
 
 export default Quiz;

@@ -66,12 +66,21 @@ function StudyPlanGenerator({ accessToken }) {
   }
 
   return (
-    <section>
-      <h2>AI Study Plan Generator</h2>
+    <section className="plan-app">
 
-      <form onSubmit={generatePlan}>
+      <div className="plan-app-title">
         <div>
-          <label htmlFor="plan-subject">Subject</label>
+          <h2>AI Study Plan Generator</h2>
+          <p>Create a personalized study schedule for your exam.</p>
+        </div>
+
+        <div className="plan-badge">📅 Smart Planner</div>
+      </div>
+
+      <form className="plan-generator" onSubmit={generatePlan}>
+
+        <div className="plan-field">
+          <label htmlFor="plan-subject">📚 Subject</label>
 
           <select
             id="plan-subject"
@@ -89,8 +98,8 @@ function StudyPlanGenerator({ accessToken }) {
           </select>
         </div>
 
-        <div>
-          <label htmlFor="plan-topics">Topics</label>
+        <div className="plan-field plan-topics-field">
+          <label htmlFor="plan-topics">📖 Topics</label>
 
           <textarea
             id="plan-topics"
@@ -98,13 +107,13 @@ function StudyPlanGenerator({ accessToken }) {
             onChange={(event) =>
               setTopics(event.target.value)
             }
-            placeholder="Algebra, graphs, simultaneous equations"
+            placeholder="e.g. Algebra, graphs, simultaneous equations"
             required
           />
         </div>
 
-        <div>
-          <label htmlFor="exam-date">Exam date</label>
+        <div className="plan-field">
+          <label htmlFor="exam-date">📆 Exam Date</label>
 
           <input
             id="exam-date"
@@ -118,10 +127,8 @@ function StudyPlanGenerator({ accessToken }) {
           />
         </div>
 
-        <div>
-          <label htmlFor="available-days">
-            Number of study days
-          </label>
+        <div className="plan-field">
+          <label htmlFor="available-days">⏱️ Study Days</label>
 
           <input
             id="available-days"
@@ -135,32 +142,75 @@ function StudyPlanGenerator({ accessToken }) {
           />
         </div>
 
-        <button type="submit" disabled={loading}>
-          {loading ? "Generating..." : "Generate study plan"}
+        <button
+          className="generate-plan-button"
+          type="submit"
+          disabled={loading}
+        >
+          {loading ? "Generating..." : "✨ Generate Study Plan"}
         </button>
+
       </form>
 
-      {message && <p>{message}</p>}
-      {error && <p>Error: {error}</p>}
+      {message && (
+        <div className="plan-success">
+          ✓ {message}
+        </div>
+      )}
+
+      {error && (
+        <div className="plan-error">
+          ⚠️ {error}
+        </div>
+      )}
 
       {generatedTasks.length > 0 && (
-        <>
-          <h3>Generated Plan</h3>
+        <div className="generated-plan">
 
-          <ol>
-            {generatedTasks.map((task) => (
-              <li key={task.id}>
-                <strong>{task.title}</strong>
-                <p>{task.description}</p>
-                <p>
-                  Due:{" "}
-                  {new Date(task.due_date).toLocaleString()}
-                </p>
-              </li>
+          <div className="generated-plan-header">
+            <div>
+              <span>YOUR PERSONALIZED SCHEDULE</span>
+              <h3>Generated Plan</h3>
+            </div>
+
+            <div className="task-count">
+              {generatedTasks.length} Tasks
+            </div>
+          </div>
+
+          <div className="plan-task-list">
+
+            {generatedTasks.map((task, index) => (
+              <article
+                className="plan-task"
+                key={task.id}
+              >
+
+                <div className="plan-task-number">
+                  {index + 1}
+                </div>
+
+                <div className="plan-task-content">
+                  <h4>{task.title}</h4>
+
+                  <p>{task.description}</p>
+
+                  <div className="plan-due-date">
+                    📅 Due:{" "}
+                    {new Date(
+                      task.due_date
+                    ).toLocaleString()}
+                  </div>
+                </div>
+
+              </article>
             ))}
-          </ol>
-        </>
+
+          </div>
+
+        </div>
       )}
+
     </section>
   );
 }

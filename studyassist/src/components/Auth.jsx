@@ -18,15 +18,12 @@ function Auth() {
 
     try {
       if (authMode === "signup") {
-        const { error: signupError } =
-          await supabase.auth.signUp({
-            email,
-            password,
-          });
+        const { error: signupError } = await supabase.auth.signUp({
+          email,
+          password,
+        });
 
-        if (signupError) {
-          throw signupError;
-        }
+        if (signupError) throw signupError;
 
         setMessage(
           "Account created. Check your email if confirmation is required."
@@ -38,9 +35,7 @@ function Auth() {
             password,
           });
 
-        if (loginError) {
-          throw loginError;
-        }
+        if (loginError) throw loginError;
       }
     } catch (authError) {
       setError(authError.message);
@@ -50,63 +45,85 @@ function Auth() {
   }
 
   return (
-    <main>
-      <h1>AI Study Assistant</h1>
+    <main className="auth-container">
+      <div className="auth-card">
 
-      <h2>
-        {authMode === "login" ? "Log in" : "Create account"}
-      </h2>
+        <div className="auth-logo">🧠</div>
 
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="email">Email</label>
+        <h1>AI Study Assistant</h1>
 
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-          />
-        </div>
+        <h2>
+          {authMode === "login"
+            ? "Welcome back! Log in to continue."
+            : "Create your account and start learning."}
+        </h2>
 
-        <div>
-          <label htmlFor="password">Password</label>
+        <form className="auth-form" onSubmit={handleSubmit}>
 
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            minLength="6"
-            required
-          />
-        </div>
+          <div className="auth-field">
+            <label htmlFor="email">Email</label>
 
-        <button type="submit" disabled={loading}>
-          {loading
-            ? "Please wait..."
-            : authMode === "login"
-              ? "Log in"
-              : "Create account"}
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="Enter your email"
+              required
+            />
+          </div>
+
+          <div className="auth-field">
+            <label htmlFor="password">Password</label>
+
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="Enter your password"
+              minLength="6"
+              required
+            />
+          </div>
+
+          <button
+            className="auth-submit"
+            type="submit"
+            disabled={loading}
+          >
+            {loading
+              ? "Please wait..."
+              : authMode === "login"
+                ? "Log in"
+                : "Create account"}
+          </button>
+
+        </form>
+
+        <button
+          className="auth-switch"
+          type="button"
+          onClick={() =>
+            setAuthMode((currentMode) =>
+              currentMode === "login" ? "signup" : "login"
+            )
+          }
+        >
+          {authMode === "login"
+            ? "Need an account? Sign up"
+            : "Already have an account? Log in"}
         </button>
-      </form>
 
-      <button
-        type="button"
-        onClick={() =>
-          setAuthMode((currentMode) =>
-            currentMode === "login" ? "signup" : "login"
-          )
-        }
-      >
-        {authMode === "login"
-          ? "Need an account? Sign up"
-          : "Already have an account? Log in"}
-      </button>
+        {message && (
+          <p className="auth-message">{message}</p>
+        )}
 
-      {message && <p>{message}</p>}
-      {error && <p>Error: {error}</p>}
+        {error && (
+          <p className="auth-error">Error: {error}</p>
+        )}
+
+      </div>
     </main>
   );
 }

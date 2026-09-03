@@ -166,124 +166,210 @@ useEffect(() => {
   }
 
   return (
-    <section>
-      <h2>Study Planner</h2>
-
-      <form onSubmit={createTask}>
+    <section className="task-app">
+  
+      <div className="task-app-title">
         <div>
-          <label htmlFor="task-title">Task title</label>
-
-          <input
-            id="task-title"
-            type="text"
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            placeholder="Revise electricity"
-          />
+          <h2>Task Planner</h2>
+          <p>Create, manage, and track your study tasks.</p>
         </div>
-
-        <div>
-          <label htmlFor="task-subject">Subject</label>
-
-          <select
-            id="task-subject"
-            value={subject}
-            onChange={(event) => setSubject(event.target.value)}
-          >
-            <option value="General">General</option>
-            <option value="Mathematics">Mathematics</option>
-            <option value="English">English</option>
-            <option value="Biology">Biology</option>
-            <option value="Chemistry">Chemistry</option>
-            <option value="Physics">Physics</option>
-            <option value="Economics">Economics</option>
-          </select>
-        </div>
-
-        <div>
-          <label htmlFor="task-description">Description</label>
-
-          <textarea
-            id="task-description"
-            value={description}
-            onChange={(event) =>
-              setDescription(event.target.value)
-            }
-            placeholder="Topics or additional details"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="task-date">Due date</label>
-
-          <input
-            id="task-date"
-            type="datetime-local"
-            value={dueDate}
-            onChange={(event) => setDueDate(event.target.value)}
-          />
-        </div>
-
-        <div>
-          <label htmlFor="task-priority">Priority</label>
-
-          <select
-            id="task-priority"
-            value={priority}
-            onChange={(event) => setPriority(event.target.value)}
-          >
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-          </select>
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading || !title.trim()}
-        >
-          {loading ? "Creating..." : "Create task"}
-        </button>
-      </form>
-
-      {error && <p>Error: {error}</p>}
-
-      <h3>Your Tasks</h3>
-
-      {tasks.length === 0 && <p>No tasks created yet.</p>}
-
-      <ul>
-        {tasks.map((task) => (
-          <li key={task.id}>
+  
+        <div className="task-badge">✅ Smart Tasks</div>
+      </div>
+  
+      <form className="task-generator" onSubmit={createTask}>
+  
+        <div className="task-form-grid">
+  
+          <div className="task-field task-field-wide">
+            <label htmlFor="task-title">Task title</label>
+  
             <input
-              type="checkbox"
-              checked={task.completed}
-              onChange={() => toggleTask(task)}
+              id="task-title"
+              type="text"
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              placeholder="e.g. Revise quadratic equations"
+              required
             />
-
-            <strong>{task.title}</strong>
-            <span> — {task.subject}</span>
-            <span> — {task.priority} priority</span>
-
-            {task.due_date && (
-              <span>
-                {" "}
-                — Due:{" "}
-                {new Date(task.due_date).toLocaleString()}
-              </span>
-            )}
-
-            {task.description && <p>{task.description}</p>}
-
-            <button
-              type="button"
-              onClick={() => deleteTask(task.id)}
+          </div>
+  
+          <div className="task-field">
+            <label htmlFor="task-subject">Subject</label>
+  
+            <select
+              id="task-subject"
+              value={subject}
+              onChange={(event) => setSubject(event.target.value)}
             >
-              Delete
-            </button>
-          </li>
-        ))}
-      </ul>
+              <option>General</option>
+              <option>Mathematics</option>
+              <option>English</option>
+              <option>Biology</option>
+              <option>Chemistry</option>
+              <option>Physics</option>
+              <option>Economics</option>
+              <option>Digital Technology</option>
+              <option>Further Mathematics</option>
+            </select>
+          </div>
+  
+          <div className="task-field">
+            <label htmlFor="task-priority">Priority</label>
+  
+            <select
+              id="task-priority"
+              value={priority}
+              onChange={(event) => setPriority(event.target.value)}
+            >
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+  
+          <div className="task-field">
+            <label htmlFor="task-due-date">Due date</label>
+  
+            <input
+              id="task-due-date"
+              type="date"
+              value={dueDate}
+              onChange={(event) => setDueDate(event.target.value)}
+            />
+          </div>
+  
+          <div className="task-field task-field-wide">
+            <label htmlFor="task-description">Description</label>
+  
+            <textarea
+              id="task-description"
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder="Add some details about this task..."
+              rows="4"
+            />
+          </div>
+  
+        </div>
+  
+        <button
+          className="create-task-button"
+          type="submit"
+          disabled={loading}
+        >
+          {loading ? "Creating..." : "＋ Create Task"}
+        </button>
+  
+      </form>
+  
+      {error && (
+        <div className="task-error">
+          ⚠️ {error}
+        </div>
+      )}
+  
+      <div className="task-list-section">
+  
+        <div className="task-list-header">
+          <div>
+            <h3>Your Study Tasks</h3>
+            <p>Stay organized and keep your study goals moving.</p>
+          </div>
+  
+          <div className="task-count">
+            {tasks.length} {tasks.length === 1 ? "Task" : "Tasks"}
+          </div>
+        </div>
+  
+        {tasks.length === 0 ? (
+          <div className="empty-tasks">
+            <div className="empty-task-icon">📚</div>
+            <h3>No tasks yet</h3>
+            <p>Create your first study task to get started.</p>
+          </div>
+        ) : (
+          <div className="task-list">
+  
+            {tasks.map((task) => (
+              <div
+                className={`task-item ${
+                  task.completed ? "completed" : ""
+                }`}
+                key={task.id}
+              >
+  
+                <div className="task-item-main">
+  
+                  <button
+                    className="task-check"
+                    type="button"
+                    onClick={() => toggleTask(task)}
+                    aria-label={
+                      task.completed
+                        ? "Mark task as incomplete"
+                        : "Mark task as complete"
+                    }
+                  >
+                    {task.completed ? "✓" : ""}
+                  </button>
+  
+                  <div className="task-item-content">
+  
+                    <h4>{task.title}</h4>
+  
+                    {task.description && (
+                      <p>{task.description}</p>
+                    )}
+  
+                    <div className="task-meta">
+  
+                      {task.subject && (
+                        <span className="task-subject">
+                          📚 {task.subject}
+                        </span>
+                      )}
+  
+                      {task.priority && (
+                        <span
+                          className={`task-priority priority-${task.priority}`}
+                        >
+                          {task.priority === "high"
+                            ? "🔴 High"
+                            : task.priority === "medium"
+                              ? "🟡 Medium"
+                              : "🟢 Low"}
+                        </span>
+                      )}
+  
+                      {task.due_date && (
+                        <span className="task-due">
+                          📅 Due {task.due_date}
+                        </span>
+                      )}
+  
+                    </div>
+  
+                  </div>
+  
+                </div>
+  
+                <button
+                  className="task-delete"
+                  type="button"
+                  onClick={() => deleteTask(task.id)}
+                >
+                  Delete
+                </button>
+  
+              </div>
+            ))}
+  
+          </div>
+        )}
+  
+      </div>
+  
     </section>
   );
 }
