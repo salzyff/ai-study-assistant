@@ -17,10 +17,16 @@ function Progress({ accessToken }) {
   const loadProgress = useCallback(async () => {
     try {
       setError("");
+
       const [progressData, sessionsData] = await Promise.all([
-        apiRequest(`/api/progress?days=${days}`, { accessToken }),
-        apiRequest("/api/progress/study-sessions?limit=30", { accessToken }),
+        apiRequest(`/api/progress?days=${days}`, {
+          accessToken,
+        }),
+        apiRequest("/api/progress/study-sessions?limit=30", {
+          accessToken,
+        }),
       ]);
+
       setProgress(progressData);
       setSessions(sessionsData.sessions || []);
     } catch (requestError) {
@@ -30,17 +36,20 @@ function Progress({ accessToken }) {
 
   useEffect(() => {
     const timer = window.setTimeout(loadProgress, 0);
+
     return () => window.clearTimeout(timer);
   }, [loadProgress]);
 
   async function createSession(event) {
     event.preventDefault();
+
     if (!topic.trim()) return;
 
     try {
       setLoading(true);
       setError("");
       setMessage("");
+
       await apiRequest("/api/progress/study-sessions", {
         accessToken,
         method: "POST",
@@ -50,6 +59,7 @@ function Progress({ accessToken }) {
           plannedMinutes: Number(plannedMinutes),
         },
       });
+
       setTopic("");
       setMessage("Study session started");
       await loadProgress();
@@ -61,16 +71,24 @@ function Progress({ accessToken }) {
   }
 
   async function completeSession(session) {
-    const actualMinutes = Number(completionMinutes[session.id] || session.planned_minutes);
+    const actualMinutes = Number(
+      completionMinutes[session.id] ||
+        session.planned_minutes
+    );
 
     try {
       setLoading(true);
       setError("");
-      await apiRequest(`/api/progress/study-sessions/${session.id}/complete`, {
-        accessToken,
-        method: "PATCH",
-        body: { actualMinutes },
-      });
+
+      await apiRequest(
+        `/api/progress/study-sessions/${session.id}/complete`,
+        {
+          accessToken,
+          method: "PATCH",
+          body: { actualMinutes },
+        }
+      );
+
       setMessage("Study session completed");
       await loadProgress();
     } catch (requestError) {
@@ -81,110 +99,524 @@ function Progress({ accessToken }) {
   }
 
   return (
-    <section>
-      <h2>Study Progress</h2>
+    <section className="progress-app">
 
-      <p>
-        <label htmlFor="progress-days">Progress period</label>{" "}
-        <select id="progress-days" value={days} onChange={(event) => setDays(Number(event.target.value))}>
-          <option value="7">7 days</option>
-          <option value="30">30 days</option>
-          <option value="90">90 days</option>
-          <option value="365">365 days</option>
-        </select>{" "}
-        <button type="button" onClick={loadProgress}>Refresh</button>
-      </p>
+      {/* HEADER */}
+      <div className="progress-app-header">
 
+        <div>
+          <div className="progress-badge">
+            📊 STUDY ANALYTICS
+          </div>
+
+          <h2>Study Progress</h2>
+
+          <p>
+            Track your study activity, quiz performance,
+            sessions, and learning streak.
+          </p>
+        </div>
+
+        <div className="progress-header-icon">
+          📈
+        </div>
+
+      </div>
+
+      {/* FILTER */}
+      <div className="progress-filter-card">
+
+        <div className="progress-filter-info">
+          <span className="progress-filter-icon">
+            📅
+          </span>
+
+          <div>
+            <strong>Progress period</strong>
+            <p>
+              Choose how much of your recent activity
+              you want to view.
+            </p>
+          </div>
+        </div>
+
+        <div className="progress-filter-actions">
+
+          <select
+            id="progress-days"
+            value={days}
+            onChange={(event) =>
+              setDays(Number(event.target.value))
+            }
+          >
+            <option value="7">Last 7 days</option>
+            <option value="30">Last 30 days</option>
+            <option value="90">Last 90 days</option>
+            <option value="365">Last 365 days</option>
+          </select>
+
+          <button
+            type="button"
+            className="progress-refresh-button"
+            onClick={loadProgress}
+          >
+            ↻ Refresh
+          </button>
+
+        </div>
+
+      </div>
+
+      {/* STATISTICS */}
       {progress && (
         <>
-          <dl>
-            <dt>Tasks completed</dt><dd>{progress.tasks.completed} of {progress.tasks.total}</dd>
-            <dt>Quiz average</dt><dd>{progress.quizzes.averagePercentage}%</dd>
-            <dt>Best quiz</dt><dd>{progress.quizzes.bestPercentage}%</dd>
-            <dt>Study sessions</dt><dd>{progress.study.sessionsCompleted}</dd>
-            <dt>Minutes studied</dt><dd>{progress.study.minutesStudied}</dd>
-            <dt>Study streak</dt><dd>{progress.study.streakDays} days</dd>
-            <dt>Flashcards remembered</dt><dd>{progress.flashcards.remembered} of {progress.flashcards.reviews} reviews</dd>
-          </dl>
 
-          <h3>Progress by subject</h3>
-          {progress.subjectProgress.length === 0 ? (
-            <p>Complete a quiz or study session to see subject progress.</p>
-          ) : (
-            <table>
-              <thead>
-                <tr><th>Subject</th><th>Minutes</th><th>Sessions</th><th>Quiz average</th></tr>
-              </thead>
-              <tbody>
-                {progress.subjectProgress.map((item) => (
-                  <tr key={item.subject}>
-                    <td>{item.subject}</td>
-                    <td>{item.minutesStudied}</td>
-                    <td>{item.studySessions}</td>
-                    <td>{item.quizAverage}%</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+          <div className="progress-stats-grid">
+
+            <div className="progress-stat-card">
+              <div className="progress-stat-icon">
+                ✅
+              </div>
+
+              <div>
+                <span>Tasks completed</span>
+                <strong>
+                  {progress.tasks.completed}
+                  <small> / {progress.tasks.total}</small>
+                </strong>
+              </div>
+            </div>
+
+            <div className="progress-stat-card">
+              <div className="progress-stat-icon">
+                📝
+              </div>
+
+              <div>
+                <span>Quiz average</span>
+                <strong>
+                  {progress.quizzes.averagePercentage}%
+                </strong>
+              </div>
+            </div>
+
+            <div className="progress-stat-card">
+              <div className="progress-stat-icon">
+                🏆
+              </div>
+
+              <div>
+                <span>Best quiz</span>
+                <strong>
+                  {progress.quizzes.bestPercentage}%
+                </strong>
+              </div>
+            </div>
+
+            <div className="progress-stat-card">
+              <div className="progress-stat-icon">
+                ⏱️
+              </div>
+
+              <div>
+                <span>Minutes studied</span>
+                <strong>
+                  {progress.study.minutesStudied}
+                </strong>
+              </div>
+            </div>
+
+            <div className="progress-stat-card">
+              <div className="progress-stat-icon">
+                🔥
+              </div>
+
+              <div>
+                <span>Study streak</span>
+                <strong>
+                  {progress.study.streakDays}
+                  <small> days</small>
+                </strong>
+              </div>
+            </div>
+
+            <div className="progress-stat-card">
+              <div className="progress-stat-icon">
+                🧠
+              </div>
+
+              <div>
+                <span>Study sessions</span>
+                <strong>
+                  {progress.study.sessionsCompleted}
+                </strong>
+              </div>
+            </div>
+
+          </div>
+
+          {/* FLASHCARD SUMMARY */}
+          <div className="progress-summary-card">
+
+            <div className="progress-summary-icon">
+              🃏
+            </div>
+
+            <div>
+              <strong>Flashcards remembered</strong>
+
+              <p>
+                {progress.flashcards.remembered} of{" "}
+                {progress.flashcards.reviews} reviews
+              </p>
+            </div>
+
+          </div>
+
+          {/* SUBJECT PROGRESS */}
+          <div className="progress-section-card">
+
+            <div className="progress-section-header">
+              <div>
+                <h3>Progress by subject</h3>
+                <p>
+                  See how much time you have spent on
+                  each subject.
+                </p>
+              </div>
+
+              <span className="progress-section-icon">
+                📚
+              </span>
+            </div>
+
+            {progress.subjectProgress.length === 0 ? (
+
+              <div className="progress-empty">
+                <div>📚</div>
+
+                <strong>No subject data yet</strong>
+
+                <p>
+                  Complete a quiz or study session to
+                  see subject progress.
+                </p>
+              </div>
+
+            ) : (
+
+              <div className="progress-table-wrapper">
+
+                <table className="progress-table">
+
+                  <thead>
+                    <tr>
+                      <th>Subject</th>
+                      <th>Minutes</th>
+                      <th>Sessions</th>
+                      <th>Quiz average</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {progress.subjectProgress.map(
+                      (item) => (
+                        <tr key={item.subject}>
+
+                          <td>
+                            <strong>
+                              {item.subject}
+                            </strong>
+                          </td>
+
+                          <td>
+                            {item.minutesStudied} min
+                          </td>
+
+                          <td>
+                            {item.studySessions}
+                          </td>
+
+                          <td>
+                            <span className="progress-score">
+                              {item.quizAverage}%
+                            </span>
+                          </td>
+
+                        </tr>
+                      )
+                    )}
+                  </tbody>
+
+                </table>
+
+              </div>
+
+            )}
+
+          </div>
+
         </>
+
       )}
 
-      <hr />
+      {/* START STUDY SESSION */}
+      <div className="progress-section-card">
 
-      <h3>Start a study timer</h3>
-      <form onSubmit={createSession}>
-        <p>
-          <label htmlFor="session-subject">Subject</label><br />
-          <select id="session-subject" value={subject} onChange={(event) => setSubject(event.target.value)}>
-            {SUBJECTS.map((subjectOption) => (
-              <option value={subjectOption} key={subjectOption}>{subjectOption}</option>
-            ))}
-          </select>
-        </p>
-        <p>
-          <label htmlFor="session-topic">Topic</label><br />
-          <input id="session-topic" value={topic} onChange={(event) => setTopic(event.target.value)} maxLength="200" required />
-        </p>
-        <p>
-          <label htmlFor="session-minutes">Planned minutes</label><br />
-          <input id="session-minutes" type="number" min="5" max="180" value={plannedMinutes} onChange={(event) => setPlannedMinutes(event.target.value)} />
-        </p>
-        <button type="submit" disabled={loading}>Start session</button>
-      </form>
+        <div className="progress-section-header">
 
-      <h3>Study sessions</h3>
-      {sessions.length === 0 ? (
-        <p>No sessions yet.</p>
-      ) : (
-        <ul>
-          {sessions.map((session) => (
-            <li key={session.id}>
-              <strong>{session.subject}: {session.topic}</strong> — planned {session.planned_minutes} minutes
-              {session.completed ? (
-                <span> — completed in {session.actual_minutes} minutes</span>
-              ) : (
-                <div>
-                  <label htmlFor={`actual-${session.id}`}>Actual minutes </label>
-                  <input
-                    id={`actual-${session.id}`}
-                    type="number"
-                    min="1"
-                    max="240"
-                    value={completionMinutes[session.id] ?? session.planned_minutes}
-                    onChange={(event) => setCompletionMinutes((values) => ({ ...values, [session.id]: event.target.value }))}
-                  />{" "}
-                  <button type="button" onClick={() => completeSession(session)} disabled={loading}>Complete session</button>
+          <div>
+            <h3>Start a study session</h3>
+
+            <p>
+              Record what you are studying and how
+              long you plan to study.
+            </p>
+          </div>
+
+          <span className="progress-section-icon">
+            ⏱️
+          </span>
+
+        </div>
+
+        <form
+          className="progress-session-form"
+          onSubmit={createSession}
+        >
+
+          <div className="progress-form-grid">
+
+            <div className="progress-field">
+
+              <label htmlFor="session-subject">
+                Subject
+              </label>
+
+              <select
+                id="session-subject"
+                value={subject}
+                onChange={(event) =>
+                  setSubject(event.target.value)
+                }
+              >
+                {SUBJECTS.map((subjectOption) => (
+                  <option
+                    value={subjectOption}
+                    key={subjectOption}
+                  >
+                    {subjectOption}
+                  </option>
+                ))}
+              </select>
+
+            </div>
+
+            <div className="progress-field">
+
+              <label htmlFor="session-minutes">
+                Planned minutes
+              </label>
+
+              <input
+                id="session-minutes"
+                type="number"
+                min="5"
+                max="180"
+                value={plannedMinutes}
+                onChange={(event) =>
+                  setPlannedMinutes(event.target.value)
+                }
+              />
+
+            </div>
+
+          </div>
+
+          <div className="progress-field">
+
+            <label htmlFor="session-topic">
+              Topic
+            </label>
+
+            <input
+              id="session-topic"
+              value={topic}
+              onChange={(event) =>
+                setTopic(event.target.value)
+              }
+              maxLength="200"
+              placeholder="What are you going to study?"
+              required
+            />
+
+          </div>
+
+          <button
+            className="start-session-button"
+            type="submit"
+            disabled={loading}
+          >
+            {loading
+              ? "Starting..."
+              : "▶ Start Study Session"}
+          </button>
+
+        </form>
+
+      </div>
+
+      {/* STUDY SESSIONS */}
+      <div className="progress-section-card">
+
+        <div className="progress-section-header">
+
+          <div>
+            <h3>Study sessions</h3>
+
+            <p>
+              Review and complete your recorded
+              study sessions.
+            </p>
+          </div>
+
+          <span className="progress-section-icon">
+            📖
+          </span>
+
+        </div>
+
+        {sessions.length === 0 ? (
+
+          <div className="progress-empty">
+            <div>📚</div>
+
+            <strong>No sessions yet</strong>
+
+            <p>
+              Start your first study session above.
+            </p>
+          </div>
+
+        ) : (
+
+          <div className="study-session-list">
+
+            {sessions.map((session) => (
+
+              <div
+                className={`study-session-item ${
+                  session.completed
+                    ? "completed-session"
+                    : ""
+                }`}
+                key={session.id}
+              >
+
+                <div className="study-session-icon">
+                  {session.completed ? "✅" : "📚"}
                 </div>
-              )}
-            </li>
-          ))}
-        </ul>
+
+                <div className="study-session-info">
+
+                  <strong>
+                    {session.subject}: {session.topic}
+                  </strong>
+
+                  <span>
+                    Planned: {session.planned_minutes} minutes
+                  </span>
+
+                  {session.completed && (
+                    <span className="completed-text">
+                      Completed in{" "}
+                      {session.actual_minutes} minutes
+                    </span>
+                  )}
+
+                </div>
+
+                {!session.completed && (
+
+                  <div className="complete-session-area">
+
+                    <label
+                      htmlFor={`actual-${session.id}`}
+                    >
+                      Actual minutes
+                    </label>
+
+                    <div className="complete-session-controls">
+
+                      <input
+                        id={`actual-${session.id}`}
+                        type="number"
+                        min="1"
+                        max="240"
+                        value={
+                          completionMinutes[session.id] ??
+                          session.planned_minutes
+                        }
+                        onChange={(event) =>
+                          setCompletionMinutes(
+                            (values) => ({
+                              ...values,
+                              [session.id]:
+                                event.target.value,
+                            })
+                          )
+                        }
+                      />
+
+                      <button
+                        type="button"
+                        className="complete-session-button"
+                        onClick={() =>
+                          completeSession(session)
+                        }
+                        disabled={loading}
+                      >
+                        Complete
+                      </button>
+
+                    </div>
+
+                  </div>
+
+                )}
+
+              </div>
+
+            ))}
+
+          </div>
+
+        )}
+
+      </div>
+
+      {/* STATUS */}
+      {loading && (
+        <div className="progress-status progress-loading">
+          ⏳ Working...
+        </div>
       )}
 
-      {loading && <p>Working...</p>}
-      {message && <p>{message}</p>}
-      {error && <p role="alert">Error: {error}</p>}
+      {message && (
+        <div className="progress-status progress-success">
+          ✅ {message}
+        </div>
+      )}
+
+      {error && (
+        <div
+          className="progress-status progress-error"
+          role="alert"
+        >
+          ⚠️ {error}
+        </div>
+      )}
+
     </section>
   );
 }

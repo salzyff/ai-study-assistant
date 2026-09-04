@@ -1,0 +1,261 @@
+.learning-review {
+    color: #172033;
+  }
+  
+  .learning-review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 28px;
+  }
+  
+  .learning-review-label {
+    display: block;
+    margin-bottom: 7px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1.4px;
+    color: #64748b;
+  }
+  
+  .learning-review-header h2 {
+    margin: 0;
+    font-size: 26px;
+  }
+  
+  .learning-review-header p {
+    margin: 6px 0 0;
+    color: #64748b;
+  }
+  
+  .learning-review-refresh {
+    border: none;
+    border-radius: 12px;
+    padding: 11px 17px;
+    background: #172033;
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  
+  .learning-review-refresh:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  /* QUEUE */
+  
+  .review-queue {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  
+  .review-card {
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 17px;
+    background: #f8fafc;
+  }
+  
+  .review-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 15px;
+  }
+  
+  .review-card-title {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-weight: 800;
+  }
+  
+  .review-card-icon {
+    font-size: 21px;
+  }
+  
+  .review-count {
+    min-width: 30px;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 800;
+  }
+  
+  .review-list {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  
+  .review-list-item {
+    padding: 11px 12px;
+    background: white;
+    border-radius: 11px;
+    border: 1px solid #e2e8f0;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  
+  .review-empty {
+    margin: 0;
+    color: #94a3b8;
+    font-size: 13px;
+  }
+  
+  /* SECTIONS */
+  
+  .review-section {
+    margin-top: 32px;
+    padding-top: 28px;
+    border-top: 1px solid #e2e8f0;
+  }
+  
+  .review-section-header {
+    margin-bottom: 18px;
+  }
+  
+  .review-section-header h2 {
+    margin: 0;
+    font-size: 21px;
+  }
+  
+  .review-section-header p {
+    margin: 6px 0 0;
+    color: #64748b;
+    font-size: 13px;
+  }
+  
+  /* RECOMMENDATIONS */
+  
+  .recommendation-list {
+    display: grid;
+    gap: 12px;
+  }
+  
+  .recommendation-item {
+    padding: 16px;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+  }
+  
+  .recommendation-item strong {
+    display: block;
+    margin-bottom: 5px;
+  }
+  
+  .recommendation-item p {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  
+  /* MISTAKES */
+  
+  .mistake-list {
+    display: grid;
+    gap: 16px;
+  }
+  
+  .mistake-card {
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 17px;
+    background: white;
+  }
+  
+  .mistake-card h3 {
+    margin: 0 0 12px;
+    font-size: 17px;
+  }
+  
+  .mistake-question {
+    padding: 14px;
+    margin-bottom: 12px;
+    border-radius: 12px;
+    background: #f8fafc;
+    line-height: 1.6;
+  }
+  
+  .mistake-answer {
+    margin: 8px 0;
+    font-size: 14px;
+  }
+  
+  .mistake-correct {
+    color: #15803d;
+  }
+  
+  .mistake-explanation {
+    margin-top: 14px;
+    padding: 14px;
+    border-radius: 12px;
+    background: #f8fafc;
+    color: #475569;
+    line-height: 1.6;
+    font-size: 13px;
+  }
+  
+  .mistake-meta {
+    color: #64748b;
+    font-size: 12px;
+  }
+  
+  .review-mark-button {
+    margin-top: 14px;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 15px;
+    background: #172033;
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  
+  .review-mark-button:hover,
+  .learning-review-refresh:hover {
+    opacity: 0.9;
+  }
+  
+  /* STATUS */
+  
+  .review-loading {
+    padding: 20px;
+    text-align: center;
+    color: #64748b;
+  }
+  
+  .review-error {
+    margin-top: 18px;
+    padding: 13px 15px;
+    border-radius: 12px;
+    background: #fff7ed;
+    color: #c2410c;
+    font-size: 13px;
+  }
+  
+  /* MOBILE */
+  
+  @media (max-width: 800px) {
+    .review-queue {
+      grid-template-columns: 1fr;
+    }
+  
+    .learning-review-header {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  }

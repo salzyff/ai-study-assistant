@@ -16,10 +16,18 @@ function Notes({ accessToken }) {
   const loadNotes = useCallback(async () => {
     try {
       setError("");
-      const data = await apiRequest("/api/notes", { accessToken });
+
+      const data = await apiRequest("/api/notes", {
+        accessToken,
+      });
+
       setNotes(data.notes || []);
+
       setSelectedNoteId((currentId) => {
-        if (data.notes?.some((note) => note.id === currentId)) return currentId;
+        if (data.notes?.some((note) => note.id === currentId)) {
+          return currentId;
+        }
+
         return data.notes?.[0]?.id || "";
       });
     } catch (requestError) {
@@ -29,11 +37,13 @@ function Notes({ accessToken }) {
 
   useEffect(() => {
     const timer = window.setTimeout(loadNotes, 0);
+
     return () => window.clearTimeout(timer);
   }, [loadNotes]);
 
   async function uploadNotes(event) {
     event.preventDefault();
+
     const form = event.currentTarget;
     const formData = new FormData(form);
 
@@ -41,14 +51,19 @@ function Notes({ accessToken }) {
       setLoading(true);
       setError("");
       setMessage("");
+
       const data = await apiRequest("/api/notes", {
         accessToken,
         method: "POST",
         body: formData,
       });
-      setMessage(`${data.note.title} was uploaded`);
+
+      setMessage(data.note.title + " was uploaded");
+
       form.reset();
+
       await loadNotes();
+
       setSelectedNoteId(data.note.id);
     } catch (requestError) {
       setError(requestError.message);
@@ -59,17 +74,27 @@ function Notes({ accessToken }) {
 
   async function askNotes(event) {
     event.preventDefault();
-    if (!selectedNoteId || !question.trim()) return;
+
+    if (!selectedNoteId || !question.trim()) {
+      return;
+    }
 
     try {
       setLoading(true);
       setError("");
       setAnswer("");
-      const data = await apiRequest(`/api/notes/${selectedNoteId}/ask`, {
-        accessToken,
-        method: "POST",
-        body: { question: question.trim() },
-      });
+
+      const data = await apiRequest(
+        "/api/notes/" + selectedNoteId + "/ask",
+        {
+          accessToken,
+          method: "POST",
+          body: {
+            question: question.trim(),
+          },
+        }
+      );
+
       setAnswer(data.answer);
     } catch (requestError) {
       setError(requestError.message);
@@ -79,16 +104,23 @@ function Notes({ accessToken }) {
   }
 
   async function summarizeNotes() {
-    if (!selectedNoteId) return;
+    if (!selectedNoteId) {
+      return;
+    }
 
     try {
       setLoading(true);
       setError("");
       setAnswer("");
-      const data = await apiRequest(`/api/notes/${selectedNoteId}/summarize`, {
-        accessToken,
-        method: "POST",
-      });
+
+      const data = await apiRequest(
+        "/api/notes/" + selectedNoteId + "/summarize",
+        {
+          accessToken,
+          method: "POST",
+        }
+      );
+
       setAnswer(data.summary);
     } catch (requestError) {
       setError(requestError.message);
@@ -101,12 +133,15 @@ function Notes({ accessToken }) {
     try {
       setLoading(true);
       setError("");
-      await apiRequest(`/api/notes/${noteId}`, {
+
+      await apiRequest("/api/notes/" + noteId, {
         accessToken,
         method: "DELETE",
       });
+
       setAnswer("");
       setMessage("Notes deleted");
+
       await loadNotes();
     } catch (requestError) {
       setError(requestError.message);
@@ -115,88 +150,245 @@ function Notes({ accessToken }) {
     }
   }
 
+  const selectedNote = notes.find(
+    (note) => note.id === selectedNoteId
+  );
+
   return (
-    <section>
-      <h2>Notes and PDF study</h2>
+    <section className="tool-page">
+      <button type="button" className="back-button">
+        ← Back to Study Tools
+      </button>
 
-      <form onSubmit={uploadNotes}>
-        <p>
-          <label htmlFor="note-file">PDF, TXT, or Markdown file</label><br />
-          <input id="note-file" name="file" type="file" accept=".pdf,.txt,.md,application/pdf,text/plain,text/markdown" required />
-        </p>
-        <p>
-          <label htmlFor="note-title">Title (optional)</label><br />
-          <input id="note-title" name="title" type="text" maxLength="120" />
-        </p>
-        <p>
-          <label htmlFor="note-subject">Subject</label><br />
-          <select id="note-subject" name="subject" defaultValue="General">
-            {SUBJECTS.map((subject) => (
-              <option value={subject} key={subject}>{subject}</option>
-            ))}
-          </select>
-        </p>
-        <button type="submit" disabled={loading}>Upload notes</button>
-      </form>
-
-      <hr />
-
-      <h3>Saved notes</h3>
-      {notes.length === 0 ? (
-        <p>No notes uploaded yet.</p>
-      ) : (
-        <ul>
-          {notes.map((note) => (
-            <li key={note.id}>
-              <button type="button" onClick={() => setSelectedNoteId(note.id)}>
-                {note.title} ({note.subject})
-              </button>{" "}
-              <DeleteConfirmation
-                confirmation={`Delete “${note.title}” permanently?`}
-                onConfirm={() => deleteNotes(note.id)}
-                disabled={loading}
-              />
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {selectedNoteId && (
-        <>
+      <div className="tool-page-header">
+        <div>
+          <h1>Notes & PDF Study</h1>
           <p>
-            <label htmlFor="selected-note">Selected notes</label><br />
-            <select id="selected-note" value={selectedNoteId} onChange={(event) => setSelectedNoteId(event.target.value)}>
-              {notes.map((note) => (
-                <option value={note.id} key={note.id}>{note.title}</option>
-              ))}
-            </select>
+            Upload your study materials and let AI help you understand them.
           </p>
+        </div>
+      </div>
 
-          <form onSubmit={askNotes}>
-            <label htmlFor="note-question">Ask a question about these notes</label><br />
-            <textarea
-              id="note-question"
-              value={question}
-              onChange={(event) => setQuestion(event.target.value)}
-              maxLength="1000"
+      <div className="tool-page-content notes-app">
+        <div className="notes-app-title">
+          <div>
+            <h2>Study Materials</h2>
+            <p>Upload PDFs, text files, or Markdown notes.</p>
+          </div>
+
+          <span className="notes-badge">📄 Smart Notes</span>
+        </div>
+
+        <form className="notes-generator" onSubmit={uploadNotes}>
+          <div className="notes-upload-box">
+            <div className="notes-upload-icon">📤</div>
+
+            <div>
+              <h3>Upload your notes</h3>
+              <p>Supported formats: PDF, TXT, and Markdown</p>
+            </div>
+
+            <input
+              id="note-file"
+              name="file"
+              type="file"
+              accept=".pdf,.txt,.md,application/pdf,text/plain,text/markdown"
               required
             />
-            <br />
-            <button type="submit" disabled={loading || !question.trim()}>Ask notes</button>{" "}
-            <button type="button" onClick={summarizeNotes} disabled={loading}>Summarize notes</button>
-          </form>
-        </>
-      )}
+          </div>
 
-      {loading && <p>Working...</p>}
-      {message && <p>{message}</p>}
-      {error && <p role="alert">Error: {error}</p>}
-      {answer && (
-        <article>
-          <h3>AI response</h3>
-          <ReactMarkdown>{answer}</ReactMarkdown>
-        </article>
-      )}
+          <div className="notes-form-grid">
+            <div className="notes-field">
+              <label htmlFor="note-title">Title (optional)</label>
+
+              <input
+                id="note-title"
+                name="title"
+                type="text"
+                maxLength="120"
+                placeholder="e.g. Biology — Cell Structure"
+              />
+            </div>
+
+            <div className="notes-field">
+              <label htmlFor="note-subject">Subject</label>
+
+              <select
+                id="note-subject"
+                name="subject"
+                defaultValue="General"
+              >
+                {SUBJECTS.map((subject) => (
+                  <option value={subject} key={subject}>
+                    {subject}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <button
+            className="upload-notes-button"
+            type="submit"
+            disabled={loading}
+          >
+            {loading ? "Uploading..." : "Upload Notes"}
+          </button>
+        </form>
+
+        {message && (
+          <div className="notes-success">{message}</div>
+        )}
+
+        {error && (
+          <div className="notes-error" role="alert">
+            Error: {error}
+          </div>
+        )}
+
+        <div className="saved-notes-section">
+          <div className="saved-notes-header">
+            <div>
+              <h3>Saved Notes</h3>
+              <p>Your uploaded study materials</p>
+            </div>
+
+            <span className="notes-count">
+              {notes.length} {notes.length === 1 ? "note" : "notes"}
+            </span>
+          </div>
+
+          {notes.length === 0 ? (
+            <div className="empty-notes">
+              <div className="empty-notes-icon">📚</div>
+              <h3>No notes yet</h3>
+              <p>
+                Upload your first study material to get started.
+              </p>
+            </div>
+          ) : (
+            <div className="notes-list">
+              {notes.map((note) => (
+                <div
+                  className={
+                    "note-item " +
+                    (selectedNoteId === note.id ? "selected" : "")
+                  }
+                  key={note.id}
+                >
+                  <button
+                    type="button"
+                    className="note-select-button"
+                    onClick={() => setSelectedNoteId(note.id)}
+                  >
+                    <span className="note-icon">📄</span>
+
+                    <span className="note-info">
+                      <strong>{note.title}</strong>
+                      <small>{note.subject}</small>
+                    </span>
+                  </button>
+
+                  <DeleteConfirmation
+                    confirmation={
+                      "Delete “" +
+                      note.title +
+                      "” permanently?"
+                    }
+                    onConfirm={() => deleteNotes(note.id)}
+                    disabled={loading}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {selectedNoteId && (
+          <div className="note-study-section">
+            <div className="note-study-header">
+              <div>
+                <span>SELECTED MATERIAL</span>
+                <h3>
+                  {selectedNote?.title || "Study Notes"}
+                </h3>
+              </div>
+
+              <select
+                id="selected-note"
+                value={selectedNoteId}
+                onChange={(event) =>
+                  setSelectedNoteId(event.target.value)
+                }
+              >
+                {notes.map((note) => (
+                  <option value={note.id} key={note.id}>
+                    {note.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <form
+              className="ask-notes-form"
+              onSubmit={askNotes}
+            >
+              <div className="notes-field">
+                <label htmlFor="note-question">
+                  Ask a question about these notes
+                </label>
+
+                <textarea
+                  id="note-question"
+                  value={question}
+                  onChange={(event) =>
+                    setQuestion(event.target.value)
+                  }
+                  maxLength="1000"
+                  placeholder="Ask something about your study material..."
+                  required
+                />
+              </div>
+
+              <div className="notes-action-buttons">
+                <button
+                  className="ask-notes-button"
+                  type="submit"
+                  disabled={loading || !question.trim()}
+                >
+                  {loading ? "Working..." : "Ask Notes"}
+                </button>
+
+                <button
+                  className="summarize-notes-button"
+                  type="button"
+                  onClick={summarizeNotes}
+                  disabled={loading}
+                >
+                  ✨ Summarize Notes
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {answer && (
+          <article className="notes-ai-response">
+            <div className="ai-response-header">
+              <div className="ai-response-icon">🤖</div>
+
+              <div>
+                <span>AI STUDY ASSISTANT</span>
+                <h3>AI Response</h3>
+              </div>
+            </div>
+
+            <div className="ai-response-content">
+              <ReactMarkdown>{answer}</ReactMarkdown>
+            </div>
+          </article>
+        )}
+      </div>
     </section>
   );
 }

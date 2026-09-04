@@ -346,43 +346,119 @@ function App() {
       {/* MAIN AREA */}
       <main className="main-area">
       {activeTool === "learning" ? (
-  <section>
-    <button type="button" onClick={() => setActiveTool(null)}>
-      ← Back to Dashboard
-    </button>
+<section className="tool-page">
+
+  <button
+    className="back-button"
+    type="button"
+    onClick={() => setActiveTool(null)}
+  >
+    ← Back to Dashboard
+  </button>
+
+  <div className="tool-page-header">
+    <div>
+      <h1>Learning Center 🎓</h1>
+      <p>Review your learning, strengthen weak areas, and keep improving.</p>
+    </div>
+  </div>
+
+  <div className="tool-page-content">
     <LearningCenter accessToken={accessToken} />
-  </section>
+  </div>
+
+</section>
 ) : activeTool === "notes" ? (
-  <section>
-    <button type="button" onClick={() => setActiveTool(null)}>
-      ← Back to Dashboard
-    </button>
-    <h1>Notes and PDFs</h1>
+<section className="tool-page">
+
+  <button
+    className="back-button"
+    type="button"
+    onClick={() => setActiveTool(null)}
+  >
+    ← Back to Dashboard
+  </button>
+
+  <div className="tool-page-header">
+    <div>
+      <h1>Notes & PDFs 📄</h1>
+      <p>Upload, organize, and study your notes with AI.</p>
+    </div>
+  </div>
+
+  <div className="tool-page-content">
     <Notes accessToken={accessToken} />
-  </section>
+  </div>
+
+</section>
 ) : activeTool === "flashcards" ? (
-  <section>
-    <button type="button" onClick={() => setActiveTool(null)}>
-      ← Back to Dashboard
-    </button>
-    <h1>Flashcards</h1>
+<section className="tool-page">
+
+  <button
+    className="back-button"
+    type="button"
+    onClick={() => setActiveTool(null)}
+  >
+    ← Back to Dashboard
+  </button>
+
+  <div className="tool-page-header">
+    <div>
+      <h1>Flashcards 🃏</h1>
+      <p>Build your memory with smart flashcard reviews.</p>
+    </div>
+  </div>
+
+  <div className="tool-page-content">
     <Flashcards accessToken={accessToken} />
-  </section>
+  </div>
+
+</section>
 ) : activeTool === "progress" ? (
-  <section>
-    <button type="button" onClick={() => setActiveTool(null)}>
+  <section className="tool-page">
+
+    <button
+      className="back-button"
+      type="button"
+      onClick={() => setActiveTool(null)}
+    >
       ← Back to Dashboard
     </button>
-    <h1>Progress</h1>
-    <Progress accessToken={accessToken} />
+
+    <div className="tool-page-header">
+      <div>
+        <h1>Progress 📊</h1>
+        <p>Track your study activity and see how you're improving.</p>
+      </div>
+    </div>
+
+    <div className="tool-page-content">
+      <Progress accessToken={accessToken} />
+    </div>
+
   </section>
 ) : activeTool === "dashboard" ? (
-  <section>
-    <button type="button" onClick={() => setActiveTool(null)}>
+  <section className="tool-page">
+
+    <button
+      className="back-button"
+      type="button"
+      onClick={() => setActiveTool(null)}
+    >
       ← Back to Dashboard
     </button>
-    <h1>Dashboard Statistics</h1>
-    <Dashboard accessToken={accessToken} />
+
+    <div className="tool-page-header">
+      <div>
+        <h1>Dashboard 📊</h1>
+        <p>Stay on top of your learning and track your progress.</p>
+      </div>
+    </div>
+
+    <div className="tool-page-content">
+      <Dashboard accessToken={accessToken} />
+    </div>
+
   </section>
 ) : activeTool === "quiz" ? (
   <section className="tool-page">
@@ -730,15 +806,71 @@ function App() {
 
           </div>
 
-          <div>
-            <h3>More study tools</h3>
-            <button type="button" onClick={() => setActiveTool("notes")}>Notes and PDFs</button>{" "}
-            <button type="button" onClick={() => setActiveTool("flashcards")}>Flashcards</button>{" "}
-            <button type="button" onClick={() => setActiveTool("progress")}>Progress</button>{" "}
-            <button type="button" onClick={() => setActiveTool("dashboard")}>Dashboard and AI usage</button>
-            {" "}<button type="button" onClick={() => setActiveTool("learning")}>Learning Center</button>
-          </div>
+          <div className="more-tools-section">
+<div className="tool-heading">
+  <h2>More Study Tools</h2>
+  <p>Explore more ways to improve your learning.</p>
+</div>
 
+<div className="tool-grid">
+
+  <div
+    className="tool-card notes-card"
+    onClick={() => setActiveTool("notes")}
+  >
+    <div className="tool-icon">📄</div>
+    <div>
+      <h3>Notes & PDFs</h3>
+      <p>Upload and study your notes.</p>
+    </div>
+  </div>
+
+  <div
+    className="tool-card flashcards-card"
+    onClick={() => setActiveTool("flashcards")}
+  >
+    <div className="tool-icon">🃏</div>
+    <div>
+      <h3>Flashcards</h3>
+      <p>Review and remember key ideas.</p>
+    </div>
+  </div>
+
+  <div
+    className="tool-card progress-card"
+    onClick={() => setActiveTool("progress")}
+  >
+    <div className="tool-icon">📊</div>
+    <div>
+      <h3>Progress</h3>
+      <p>Track your study progress.</p>
+    </div>
+  </div>
+
+  <div
+    className="tool-card dashboard-card"
+    onClick={() => setActiveTool("dashboard")}
+  >
+    <div className="tool-icon">📈</div>
+    <div>
+      <h3>Dashboard</h3>
+      <p>View your learning statistics.</p>
+    </div>
+  </div>
+
+  <div
+    className="tool-card learning-card"
+    onClick={() => setActiveTool("learning")}
+  >
+    <div className="tool-icon">🎓</div>
+    <div>
+      <h3>Learning Center</h3>
+      <p>Review, practice, and set goals.</p>
+    </div>
+  </div>
+
+</div>
+</div>
         </section>
       
   </>

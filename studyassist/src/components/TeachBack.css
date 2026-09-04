@@ -1,0 +1,231 @@
+.teach-back {
+    width: 100%;
+  }
+  
+  .teach-back-header {
+    margin-bottom: 28px;
+  }
+  
+  .teach-back-header h2 {
+    margin: 0 0 8px;
+    font-size: 28px;
+    color: #1e1b4b;
+  }
+  
+  .teach-back-header p {
+    margin: 0;
+    color: #64748b;
+    font-size: 15px;
+  }
+  
+  /* Main cards */
+  .teach-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    padding: 26px;
+    margin-bottom: 24px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  }
+  
+  .teach-card-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+  
+  .teach-icon {
+    width: 46px;
+    height: 46px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #eef2ff;
+    border-radius: 13px;
+    font-size: 23px;
+  }
+  
+  .teach-card-header h3 {
+    margin: 0 0 4px;
+    color: #1e1b4b;
+    font-size: 20px;
+  }
+  
+  .teach-card-header p {
+    margin: 0;
+    color: #64748b;
+    font-size: 14px;
+  }
+  
+  /* Forms */
+  .teach-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  
+  .teach-field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  
+  .teach-field label {
+    font-weight: 600;
+    color: #334155;
+    font-size: 14px;
+  }
+  
+  .teach-field input,
+  .teach-field select,
+  .teach-field textarea {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #dbe1ea;
+    border-radius: 11px;
+    padding: 12px 14px;
+    font-size: 14px;
+    color: #1e293b;
+    background: #f8fafc;
+    outline: none;
+    transition: 0.2s ease;
+    font-family: inherit;
+  }
+  
+  .teach-field input:focus,
+  .teach-field select:focus,
+  .teach-field textarea:focus {
+    border-color: #6366f1;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+  }
+  
+  .teach-field textarea {
+    min-height: 150px;
+    resize: vertical;
+  }
+  
+  /* Buttons */
+  .teach-button {
+    border: none;
+    border-radius: 11px;
+    padding: 13px 20px;
+    background: #4f46e5;
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: 0.2s ease;
+    align-self: flex-start;
+  }
+  
+  .teach-button:hover {
+    background: #4338ca;
+    transform: translateY(-1px);
+  }
+  
+  .teach-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+  
+  /* Results */
+  .teach-result {
+    margin-top: 24px;
+    padding: 22px;
+    border-radius: 15px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+  }
+  
+  .teach-result h3 {
+    margin: 0 0 18px;
+    color: #312e81;
+  }
+  
+  .teach-result h4 {
+    margin: 18px 0 8px;
+    color: #334155;
+    font-size: 15px;
+  }
+  
+  .teach-result ul {
+    margin: 0;
+    padding-left: 20px;
+  }
+  
+  .teach-result li {
+    margin-bottom: 7px;
+    color: #475569;
+  }
+  
+  .teach-feedback {
+    margin-top: 18px;
+    padding: 14px;
+    background: #ffffff;
+    border-radius: 10px;
+    color: #475569;
+    line-height: 1.6;
+  }
+  
+  .follow-up {
+    margin-top: 14px;
+    padding: 14px;
+    border-radius: 10px;
+    background: #eef2ff;
+    color: #3730a3;
+  }
+  
+  /* Score */
+  .score-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 7px 12px;
+    border-radius: 999px;
+    background: #ede9fe;
+    color: #5b21b6;
+    font-weight: 700;
+  }
+  
+  /* Divider */
+  .teach-divider {
+    height: 1px;
+    background: #e5e7eb;
+    margin: 34px 0;
+  }
+  
+  /* Status messages */
+  .teach-loading {
+    padding: 12px 16px;
+    margin-top: 15px;
+    background: #eef2ff;
+    color: #4338ca;
+    border-radius: 10px;
+  }
+  
+  .teach-error {
+    padding: 12px 16px;
+    margin-top: 15px;
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+  }
+  
+  /* Mobile */
+  @media (max-width: 700px) {
+    .teach-card {
+      padding: 20px;
+      border-radius: 14px;
+    }
+  
+    .teach-back-header h2 {
+      font-size: 24px;
+    }
+  
+    .teach-button {
+      width: 100%;
+    }
+  }
