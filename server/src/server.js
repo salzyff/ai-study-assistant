@@ -37,9 +37,8 @@ const ai = new GoogleGenAI({
 
 const isProduction = process.env.NODE_ENV === "production";
 
-if (isProduction) {
-  app.set("trust proxy", 1);
-}
+// Render places the Express server behind one reverse proxy.
+app.set("trust proxy", 1);
 
 app.disable("x-powered-by");
 
