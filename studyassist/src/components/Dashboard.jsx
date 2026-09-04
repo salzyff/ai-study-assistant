@@ -25,7 +25,8 @@ function Dashboard({ accessToken }) {
   }, [accessToken]);
 
   useEffect(() => {
-    loadDashboard();
+    const timer = window.setTimeout(loadDashboard, 0);
+    return () => window.clearTimeout(timer);
   }, [loadDashboard]);
 
   if (loading) {
@@ -285,4 +286,3 @@ function Dashboard({ accessToken }) {
 }
 
 export default Dashboard;
-

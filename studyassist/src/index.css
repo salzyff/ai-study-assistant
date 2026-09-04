@@ -314,6 +314,51 @@
     gap: 10px;
     padding: 10px 8px;
   }
+
+  .profile-button {
+    width: 100%;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .profile-button:hover {
+    background: #f3f4f6;
+  }
+
+  .profile-card {
+    max-width: 620px;
+    padding: 28px;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    background: white;
+  }
+
+  .profile-identity {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #eef0f4;
+  }
+
+  .profile-identity p {
+    margin: 3px 0 0;
+    color: #6b7280;
+  }
+
+  .profile-success {
+    margin-top: 14px;
+    color: #15803d;
+  }
+
+  .profile-card .logout-button {
+    margin-top: 24px;
+    border-top: 1px solid #fee2e2;
+  }
   
   .avatar {
     width: 38px;
@@ -3371,7 +3416,6 @@
     width: 100%;
   }
 }
-```css
 /* =========================
    DASHBOARD PAGE
    ========================= */
@@ -3753,3 +3797,69 @@
   }
 }
 
+/* Profile settings */
+.profile-settings-card {
+  max-width: 720px;
+}
+
+.profile-section {
+  padding: 0 0 26px;
+  margin-bottom: 26px;
+  border-bottom: 1px solid #eef0f4;
+}
+
+.profile-section:last-child {
+  padding-bottom: 0;
+  margin-bottom: 0;
+  border-bottom: 0;
+}
+
+.profile-section h2 {
+  margin: 0 0 20px;
+  color: #29283b;
+  font-size: 18px;
+}
+
+.profile-settings-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.profile-help {
+  margin: 12px 0 0;
+  color: #8b899b;
+  font-size: 13px;
+}
+
+.profile-secondary-button {
+  padding: 10px 14px;
+  border: 1px solid #d9d6ef;
+  border-radius: 9px;
+  background: #f8f7ff;
+  color: #554dc7;
+  cursor: pointer;
+}
+
+.profile-secondary-button:hover {
+  background: #eeecff;
+  border-color: #c9c5f2;
+}
+
+.profile-password-form {
+  margin-top: 18px;
+}
+
+.password-page-card {
+  max-width: 620px;
+}
+
+@media (max-width: 760px) {
+  .profile-settings-row {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-settings-card {
+    padding: 22px;
+  }
+}

@@ -5,6 +5,7 @@ function Auth() {
   const [authMode, setAuthMode] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -17,9 +18,24 @@ function Auth() {
     setError("");
 
     try {
-      if (authMode === "signup") {
+      if (authMode === "forgot") {
+        const { error: resetError } =
+          await supabase.auth.resetPasswordForEmail(email.trim(), {
+            redirectTo: window.location.origin,
+          });
+
+        if (resetError) throw resetError;
+
+        setMessage(
+          "If an account exists for that email, a password-reset link has been sent."
+        );
+      } else if (authMode === "signup") {
+        if (password !== confirmPassword) {
+          throw new Error("Passwords do not match");
+        }
+
         const { error: signupError } = await supabase.auth.signUp({
-          email,
+          email: email.trim(),
           password,
         });
 
@@ -31,7 +47,7 @@ function Auth() {
       } else {
         const { error: loginError } =
           await supabase.auth.signInWithPassword({
-            email,
+            email: email.trim(),
             password,
           });
 
@@ -53,9 +69,9 @@ function Auth() {
         <h1>AI Study Assistant</h1>
 
         <h2>
-          {authMode === "login"
-            ? "Welcome back! Log in to continue."
-            : "Create your account and start learning."}
+          {authMode === "login" && "Welcome back! Log in to continue."}
+          {authMode === "signup" && "Create your account and start learning."}
+          {authMode === "forgot" && "Enter your email to reset your password."}
         </h2>
 
         <form className="auth-form" onSubmit={handleSubmit}>
@@ -73,19 +89,37 @@ function Auth() {
             />
           </div>
 
-          <div className="auth-field">
-            <label htmlFor="password">Password</label>
+          {authMode !== "forgot" && (
+            <div className="auth-field">
+              <label htmlFor="password">Password</label>
 
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="Enter your password"
-              minLength="6"
-              required
-            />
-          </div>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="Enter your password"
+                minLength="6"
+                required
+              />
+            </div>
+          )}
+
+          {authMode === "signup" && (
+            <div className="auth-field">
+              <label htmlFor="confirm-password">Confirm password</label>
+
+              <input
+                id="confirm-password"
+                type="password"
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                placeholder="Enter your password again"
+                minLength="6"
+                required
+              />
+            </div>
+          )}
 
           <button
             className="auth-submit"
@@ -96,24 +130,56 @@ function Auth() {
               ? "Please wait..."
               : authMode === "login"
                 ? "Log in"
-                : "Create account"}
+                : authMode === "signup"
+                  ? "Create account"
+                  : "Send reset link"}
           </button>
 
         </form>
 
-        <button
-          className="auth-switch"
-          type="button"
-          onClick={() =>
-            setAuthMode((currentMode) =>
-              currentMode === "login" ? "signup" : "login"
-            )
-          }
-        >
-          {authMode === "login"
-            ? "Need an account? Sign up"
-            : "Already have an account? Log in"}
-        </button>
+        {authMode === "login" && (
+          <>
+            <button
+              className="auth-switch"
+              type="button"
+              onClick={() => {
+                setAuthMode("forgot");
+                setMessage("");
+                setError("");
+              }}
+            >
+              Forgot password?
+            </button>
+
+            <button
+              className="auth-switch"
+              type="button"
+              onClick={() => {
+                setAuthMode("signup");
+                setMessage("");
+                setError("");
+              }}
+            >
+              Need an account? Sign up
+            </button>
+          </>
+        )}
+
+        {authMode !== "login" && (
+          <button
+            className="auth-switch"
+            type="button"
+            onClick={() => {
+              setAuthMode("login");
+              setPassword("");
+              setConfirmPassword("");
+              setMessage("");
+              setError("");
+            }}
+          >
+            Back to login
+          </button>
+        )}
 
         {message && (
           <p className="auth-message">{message}</p>

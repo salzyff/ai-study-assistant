@@ -11,17 +11,34 @@ import Progress from "./components/Progress";
 import Dashboard from "./components/Dashboard";
 import LearningCenter from "./components/LearningCenter";
 import DeleteConfirmation from "./components/DeleteConfirmation";
+import ResetPassword from "./components/ResetPassword";
+import Profile from "./components/Profile";
+import ChangePassword from "./components/ChangePassword";
 import { SUBJECTS } from "./constants/subjects";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 function App() {
+  const [preferences, setPreferences] = useState(() => {
+    try {
+      return {
+        defaultSubject: "General",
+        defaultMode: "ask",
+        ...JSON.parse(localStorage.getItem("studyai-preferences") || "{}"),
+      };
+    } catch {
+      return { defaultSubject: "General", defaultMode: "ask" };
+    }
+  });
   const [session, setSession] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [passwordRecovery, setPasswordRecovery] = useState(() =>
+    window.location.hash.includes("type=recovery")
+  );
 
   const [message, setMessage] = useState("");
-  const [subject, setSubject] = useState("General");
-  const [mode, setMode] = useState("ask");
+  const [subject, setSubject] = useState(preferences.defaultSubject);
+  const [mode, setMode] = useState(preferences.defaultMode);
   const [activeTool, setActiveTool] = useState(null);
   const [sessionId, setSessionId] = useState(null);
 
@@ -33,6 +50,10 @@ function App() {
   const [error, setError] = useState("");
 
   const accessToken = session?.access_token;
+
+  useEffect(() => {
+    localStorage.setItem("studyai-preferences", JSON.stringify(preferences));
+  }, [preferences]);
 
   useEffect(() => {
     async function loadSession() {
@@ -49,7 +70,11 @@ function App() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(
-      (_event, currentSession) => {
+      (event, currentSession) => {
+        if (event === "PASSWORD_RECOVERY") {
+          setPasswordRecovery(true);
+        }
+
         setSession(currentSession);
         setAuthLoading(false);
       }
@@ -188,8 +213,8 @@ function App() {
     setSessionId(null);
     setMessages([]);
     setMessage("");
-    setSubject("General");
-    setMode("ask");
+    setSubject(preferences.defaultSubject);
+    setMode(preferences.defaultMode);
     setError("");
   }
 
@@ -238,6 +263,15 @@ function App() {
     }
   }
 
+  function finishPasswordRecovery() {
+    window.history.replaceState(
+      {},
+      document.title,
+      window.location.pathname
+    );
+    setPasswordRecovery(false);
+  }
+
   if (authLoading) {
     return (
       <div className="loading-screen">
@@ -247,6 +281,14 @@ function App() {
           <p>Loading your study space...</p>
         </div>
       </div>
+    );
+  }
+
+  if (passwordRecovery) {
+    return (
+      <ResetPassword
+        onComplete={finishPasswordRecovery}
+      />
     );
   }
 
@@ -320,23 +362,19 @@ function App() {
 
         <div className="sidebar-bottom">
 
-          <div className="user-card">
+          <button
+            className="user-card profile-button"
+            type="button"
+            onClick={() => setActiveTool("profile")}
+          >
             <div className="avatar">
               {session.user.email?.charAt(0).toUpperCase()}
             </div>
 
             <div className="user-info">
-              <strong>Student</strong>
+              <strong>{session.user.user_metadata?.display_name || "Student"}</strong>
               <span>{session.user.email}</span>
             </div>
-          </div>
-
-          <button
-            className="logout-button"
-            type="button"
-            onClick={logOut}
-          >
-            ⇥ Log out
           </button>
 
         </div>
@@ -345,7 +383,22 @@ function App() {
 
       {/* MAIN AREA */}
       <main className="main-area">
-      {activeTool === "learning" ? (
+      {activeTool === "change-password" ? (
+        <ChangePassword onBack={() => setActiveTool("profile")} />
+      ) : activeTool === "profile" ? (
+        <Profile
+          user={session.user}
+          preferences={preferences}
+          onPreferencesChange={(nextPreferences) => {
+            setPreferences(nextPreferences);
+            setSubject(nextPreferences.defaultSubject);
+            setMode(nextPreferences.defaultMode);
+          }}
+          onBack={() => setActiveTool(null)}
+          onLogout={logOut}
+          onChangePassword={() => setActiveTool("change-password")}
+        />
+      ) : activeTool === "learning" ? (
 <section className="tool-page">
 
   <button
