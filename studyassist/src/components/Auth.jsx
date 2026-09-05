@@ -12,6 +12,28 @@ function Auth() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
+  async function signInWithGoogle() {
+    if (loading) return;
+
+    setLoading(true);
+    setMessage("");
+    setError("");
+
+    try {
+      const { error: googleError } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/`,
+        },
+      });
+
+      if (googleError) throw googleError;
+    } catch (authError) {
+      setError(authError.message);
+      setLoading(false);
+    }
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
     if (loading) return;
@@ -76,6 +98,24 @@ function Auth() {
           {authMode === "signup" && "Create your account and start learning."}
           {authMode === "forgot" && "Enter your email to reset your password."}
         </h2>
+
+        {authMode !== "forgot" && (
+          <>
+            <button
+              className="google-auth-button"
+              type="button"
+              disabled={loading}
+              onClick={signInWithGoogle}
+            >
+              <span className="google-auth-mark" aria-hidden="true">G</span>
+              Continue with Google
+            </button>
+
+            <div className="auth-divider" aria-hidden="true">
+              <span>or continue with email</span>
+            </div>
+          </>
+        )}
 
         <form className="auth-form" onSubmit={handleSubmit}>
 
