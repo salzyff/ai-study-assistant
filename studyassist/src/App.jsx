@@ -671,26 +671,37 @@ function App() {
 ) : (
   <>   
 
-        <header className="topbar">
+        <header className="topbar study-header">
 
-          <div>
-            <h1>{activeTool === "chat" ? "Study Chat" : "Welcome to Study AI"}</h1>
-            <p>{activeTool === "chat" ? "Ask a question and explore it together." : "Choose a study tool or start a new chat. 🚀"}</p>
+          <div className="study-header-copy">
+            <div className="study-header-eyebrow">
+              {activeTool === "chat" && (
+                <button className="study-header-back" type="button" onClick={() => openTool(null)}>
+                  <span aria-hidden="true">←</span> Back
+                </button>
+              )}
+              <span>STUDY AI <span aria-hidden="true">/</span> {activeTool === "chat" ? "CHAT" : "YOUR WORKSPACE"}</span>
+            </div>
+            <h1>{activeTool === "chat" ? "Let’s work through it." : "Make room for your next idea."}</h1>
+            <p>{activeTool === "chat" ? "Ask, explore, and understand at your own pace." : "Your notes, practice and progress. All in one place."}</p>
           </div>
 
-          <div className="status">
-            <span className="status-dot"></span>
-            AI Online
-          </div>
+          <button className="study-header-profile" type="button" onClick={() => openTool("profile")} aria-label="Open your profile">
+            <span className="study-header-avatar" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                <circle cx="12" cy="8" r="3.5" />
+                <path d="M5 21v-2a7 7 0 0 1 14 0v2" />
+              </svg>
+            </span>
+            <span>My profile</span>
+            <span aria-hidden="true">↗</span>
+          </button>
 
         </header>
 
         {/* CONTROLS */}
         {activeTool === "chat" && (
         <>
-        <button className="back-button" type="button" onClick={() => openTool(null)}>
-          ← Back
-        </button>
         <section className="study-controls">
 
           <div className="control-group">
