@@ -25,9 +25,7 @@
     color: #111827;
   }
   
-  /* =========================================================
-     AUTH
-     ========================================================= */
+  
   
   .auth-container {
     min-height: 100vh;
@@ -113,12 +111,12 @@
     cursor: not-allowed;
   }
 
-  .google-auth-mark {
-    color: #4285f4;
-    font-family: Arial, sans-serif;
-    font-size: 18px;
-    font-weight: 800;
-  }
+.google-auth-icon {
+  width: 18px;
+  height: 18px;
+  display: block;
+  flex-shrink: 0;
+}
 
   .auth-divider {
     display: flex;
