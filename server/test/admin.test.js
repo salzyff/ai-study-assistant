@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { adminUserProtectionReason, isAdminUser } from "../src/middleware/requireAdmin.js";
+import { adminUserProtectionReason, isAdminUser, isEnvironmentAdmin } from "../src/middleware/requireAdmin.js";
 import { getRecentLogs, logger } from "../src/utils/logger.js";
 
 test("isAdminUser accepts an app metadata administrator", () => {
@@ -30,4 +30,16 @@ test("admin user management protects other administrators", () => {
     adminUserProtectionReason({ id: "user-2", app_metadata: { role: "admin" } }, "user-1"),
     "Administrator accounts are protected",
   );
+});
+
+test("environment administrators are recognized regardless of email casing", () => {
+  const previous = process.env.ADMIN_EMAILS;
+  process.env.ADMIN_EMAILS = " owner@example.com,SECOND@example.com ";
+  try {
+    assert.equal(isEnvironmentAdmin({ email: "OWNER@EXAMPLE.COM" }), true);
+    assert.equal(isEnvironmentAdmin({ email: "member@example.com" }), false);
+  } finally {
+    if (previous === undefined) delete process.env.ADMIN_EMAILS;
+    else process.env.ADMIN_EMAILS = previous;
+  }
 });

@@ -1,13 +1,20 @@
-export function isAdminUser(user) {
-  const adminEmails = new Set(
+function environmentAdminEmails() {
+  return new Set(
     (process.env.ADMIN_EMAILS || "")
       .split(",")
       .map((email) => email.trim().toLowerCase())
       .filter(Boolean),
   );
+}
+
+export function isEnvironmentAdmin(user) {
+  const email = user?.email?.trim().toLowerCase();
+  return Boolean(email && environmentAdminEmails().has(email));
+}
+
+export function isAdminUser(user) {
   const role = user?.app_metadata?.role;
-  const email = user?.email?.toLowerCase();
-  return role === "admin" || Boolean(email && adminEmails.has(email));
+  return role === "admin" || isEnvironmentAdmin(user);
 }
 
 export function requireAdmin(req, res, next) {

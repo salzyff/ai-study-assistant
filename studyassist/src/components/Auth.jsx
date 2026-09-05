@@ -6,6 +6,8 @@ function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -94,15 +96,27 @@ function Auth() {
             <div className="auth-field">
               <label htmlFor="password">Password</label>
 
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                placeholder="Enter your password"
-                minLength="6"
-                required
-              />
+              <div className="password-input-wrap">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="Enter your password"
+                  autoComplete={authMode === "login" ? "current-password" : "new-password"}
+                  minLength="6"
+                  required
+                />
+                <button
+                  className="password-visibility-button"
+                  type="button"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showPassword}
+                  onClick={() => setShowPassword((visible) => !visible)}
+                >
+                  {showPassword ? "Hide" : "Show"}
+                </button>
+              </div>
             </div>
           )}
 
@@ -110,15 +124,27 @@ function Auth() {
             <div className="auth-field">
               <label htmlFor="confirm-password">Confirm password</label>
 
-              <input
-                id="confirm-password"
-                type="password"
-                value={confirmPassword}
-                onChange={(event) => setConfirmPassword(event.target.value)}
-                placeholder="Enter your password again"
-                minLength="6"
-                required
-              />
+              <div className="password-input-wrap">
+                <input
+                  id="confirm-password"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  placeholder="Enter your password again"
+                  autoComplete="new-password"
+                  minLength="6"
+                  required
+                />
+                <button
+                  className="password-visibility-button"
+                  type="button"
+                  aria-label={showConfirmPassword ? "Hide confirmation password" : "Show confirmation password"}
+                  aria-pressed={showConfirmPassword}
+                  onClick={() => setShowConfirmPassword((visible) => !visible)}
+                >
+                  {showConfirmPassword ? "Hide" : "Show"}
+                </button>
+              </div>
             </div>
           )}
 
@@ -146,6 +172,8 @@ function Auth() {
               type="button"
               onClick={() => {
                 setAuthMode("forgot");
+                setShowPassword(false);
+                setShowConfirmPassword(false);
                 setMessage("");
                 setError("");
               }}
@@ -159,6 +187,8 @@ function Auth() {
               type="button"
               onClick={() => {
                 setAuthMode("signup");
+                setShowPassword(false);
+                setShowConfirmPassword(false);
                 setMessage("");
                 setError("");
               }}
@@ -177,6 +207,8 @@ function Auth() {
               setAuthMode("login");
               setPassword("");
               setConfirmPassword("");
+              setShowPassword(false);
+              setShowConfirmPassword(false);
               setMessage("");
               setError("");
             }}

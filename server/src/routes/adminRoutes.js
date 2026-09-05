@@ -1,6 +1,6 @@
 import express from "express";
 import { supabase } from "../supabase.js";
-import { adminUserProtectionReason, isAdminUser, requireAdmin } from "../middleware/requireAdmin.js";
+import { adminUserProtectionReason, isAdminUser, isEnvironmentAdmin, requireAdmin } from "../middleware/requireAdmin.js";
 import { paginationResult, parsePagination } from "../utils/pagination.js";
 import { RequestValidationError, uuidField } from "../utils/validation.js";
 import { runBackgroundJobsOnce } from "../services/backgroundJobs.js";
@@ -69,6 +69,7 @@ router.get("/users", async (req, res) => {
       emailConfirmedAt: user.email_confirmed_at,
       bannedUntil: user.banned_until,
       isAdmin: isAdminUser(user),
+      isEnvironmentAdmin: isEnvironmentAdmin(user),
       isCurrentUser: user.id === req.user.id,
     }));
 
@@ -100,34 +101,50 @@ async function getManageableUser(userId, currentUserId) {
 router.patch("/users/:userId/role", async (req, res) => {
   try {
     const userId = uuidField(req.params.userId, "userId");
-    if (req.body.role !== "admin") {
-      return res.status(400).json({ error: "role must be admin" });
+    if (!["admin", "member"].includes(req.body.role)) {
+      return res.status(400).json({ error: "role must be admin or member" });
     }
 
-    const manageable = await getManageableUser(userId, req.user.id);
-    if (!manageable.target) return res.status(manageable.status).json({ error: manageable.error });
+    const { data: targetResult, error: targetError } = await supabase.auth.admin.getUserById(userId);
+    if (targetError) throw targetError;
+    const target = targetResult.user;
+    if (!target) return res.status(404).json({ error: "User not found" });
+    if (target.id === req.user.id) return res.status(400).json({ error: "You cannot change your own administrator role" });
+
+    const promoting = req.body.role === "admin";
+    if (promoting && isAdminUser(target)) {
+      return res.status(400).json({ error: "This user is already an administrator" });
+    }
+    if (!promoting && isEnvironmentAdmin(target)) {
+      return res.status(403).json({ error: "The original environment administrator cannot be demoted" });
+    }
+    if (!promoting && target.app_metadata?.role !== "admin") {
+      return res.status(400).json({ error: "This user is not a promoted administrator" });
+    }
 
     const { data, error } = await supabase.auth.admin.updateUserById(userId, {
       app_metadata: {
-        ...(manageable.target.app_metadata || {}),
-        role: "admin",
+        ...(target.app_metadata || {}),
+        role: req.body.role,
       },
     });
     if (error) throw error;
 
-    logger.info("admin_user_promoted", {
+    logger.info(promoting ? "admin_user_promoted" : "admin_user_demoted", {
       adminUserId: req.user.id,
       targetUserId: userId,
     });
 
     res.json({
-      user: { id: data.user.id, email: data.user.email, isAdmin: true },
-      message: "User promoted to administrator. They should sign out and sign in again to refresh access.",
+      user: { id: data.user.id, email: data.user.email, isAdmin: promoting },
+      message: promoting
+        ? "User promoted to administrator. They should sign out and sign in again to refresh access."
+        : "Administrator demoted to member. Their administrator access has been removed.",
     });
   } catch (error) {
     if (error instanceof RequestValidationError) return res.status(400).json({ error: error.message });
-    console.error("Admin promote user error:", error);
-    res.status(500).json({ error: "Could not promote this user" });
+    console.error("Admin change user role error:", error);
+    res.status(500).json({ error: "Could not change this user's role" });
   }
 });
 

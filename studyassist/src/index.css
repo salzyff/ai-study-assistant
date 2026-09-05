@@ -113,6 +113,33 @@
     border-color: #6366f1;
     box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
   }
+
+  .password-input-wrap {
+    position: relative;
+  }
+
+  .password-input-wrap input {
+    padding-right: 68px;
+  }
+
+  .password-visibility-button {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    padding: 7px 9px;
+    border: 0;
+    border-radius: 7px;
+    background: #eef2ff;
+    color: #4f46e5;
+    font-size: 11px;
+    font-weight: 750;
+    cursor: pointer;
+  }
+
+  .password-visibility-button:hover {
+    background: #e0e7ff;
+  }
   
   .auth-submit {
     margin-top: 5px;
@@ -4257,6 +4284,18 @@
   border-color: #5945e8;
   background: #5945e8;
   color: #fff;
+}
+
+.demote-user-button {
+  padding: 8px 10px;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  background: #fff7ed;
+  color: #c2410c;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .promote-confirmation {

@@ -21,6 +21,7 @@ function UserManagement({ accessToken }) {
   const [loading, setLoading] = useState(true);
   const [busyUser, setBusyUser] = useState("");
   const [promoteUserId, setPromoteUserId] = useState("");
+  const [demoteUserId, setDemoteUserId] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
@@ -99,6 +100,26 @@ function UserManagement({ accessToken }) {
     }
   }
 
+  async function demoteUser(user) {
+    try {
+      setBusyUser(user.id);
+      setError("");
+      setMessage("");
+      const data = await apiRequest(`/api/admin/users/${user.id}/role`, {
+        accessToken,
+        method: "PATCH",
+        body: { role: "member" },
+      });
+      setDemoteUserId("");
+      setMessage(data.message);
+      await loadUsers(offset);
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setBusyUser("");
+    }
+  }
+
   return (
     <div className="operations-page">
       <div className="operations-toolbar user-toolbar">
@@ -133,7 +154,7 @@ function UserManagement({ accessToken }) {
               <tr><td colSpan="5">No matching users found.</td></tr>
             ) : visibleUsers.map((user) => {
               const suspended = isSuspended(user);
-              const protectedAccount = user.isAdmin || user.isCurrentUser;
+              const protectedAccount = user.isEnvironmentAdmin || user.isCurrentUser;
               return (
                 <tr key={user.id}>
                   <td><strong>{user.displayName}</strong><small>{user.email}</small></td>
@@ -147,7 +168,27 @@ function UserManagement({ accessToken }) {
                   <td>{formatDate(user.lastSignInAt)}</td>
                   <td>
                     {protectedAccount ? (
-                      <span className="protected-account">Protected</span>
+                      <span className="protected-account">
+                        {user.isEnvironmentAdmin ? "Original admin — protected" : "Current account — protected"}
+                      </span>
+                    ) : user.isAdmin ? (
+                      demoteUserId === user.id ? (
+                        <span className="delete-confirmation promote-confirmation" role="group" aria-label={`Demote ${user.email} to member`}>
+                          <span className="delete-confirmation-message">
+                            Demote {user.email}? They will lose administrator access.
+                          </span>
+                          <button className="delete-confirmation-accept" type="button" disabled={busyUser === user.id} onClick={() => demoteUser(user)}>
+                            {busyUser === user.id ? "Demoting…" : "Yes, demote"}
+                          </button>
+                          <button className="delete-confirmation-cancel" type="button" disabled={busyUser === user.id} onClick={() => setDemoteUserId("")}>
+                            Cancel
+                          </button>
+                        </span>
+                      ) : (
+                        <button className="demote-user-button" type="button" disabled={busyUser === user.id} onClick={() => setDemoteUserId(user.id)}>
+                          Demote to member
+                        </button>
+                      )
                     ) : (
                       <div className="user-actions">
                         <button type="button" disabled={busyUser === user.id} onClick={() => changeStatus(user)}>
