@@ -22,7 +22,7 @@ test("health route returns JSON and a request id", async () => {
   const response = await fetch(`${baseUrl}/`);
   assert.equal(response.status, 200);
   assert.ok(response.headers.get("x-request-id"));
-  assert.deepEqual(await response.json(), { message: "AI Study Assistant backend is running" });
+  assert.deepEqual(await response.json(), { message: "Study AI backend is running" });
 });
 
 test("protected API routes reject missing authentication", async () => {

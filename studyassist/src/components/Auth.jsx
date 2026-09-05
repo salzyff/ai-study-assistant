@@ -67,7 +67,7 @@ function Auth() {
 
         <div className="auth-logo">🧠</div>
 
-        <h1>AI Study Assistant</h1>
+        <h1>Study AI</h1>
 
         <h2>
           {authMode === "login" && "Welcome back! Log in to continue."}

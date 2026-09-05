@@ -14,3 +14,9 @@ export function requireAdmin(req, res, next) {
   if (isAdminUser(req.user)) return next();
   return res.status(403).json({ error: "Administrator access required" });
 }
+
+export function adminUserProtectionReason(targetUser, currentUserId) {
+  if (targetUser?.id === currentUserId) return "You cannot manage your own account here";
+  if (isAdminUser(targetUser)) return "Administrator accounts are protected";
+  return null;
+}

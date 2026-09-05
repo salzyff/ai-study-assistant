@@ -16,6 +16,7 @@ import Profile from "./components/Profile";
 import ChangePassword from "./components/ChangePassword";
 import WeeklyReports from "./components/WeeklyReports";
 import AdminDashboard from "./components/AdminDashboard";
+import UserManagement from "./components/UserManagement";
 import { SUBJECTS } from "./constants/subjects";
 import { apiRequest, streamApiRequest } from "./api";
 
@@ -322,7 +323,7 @@ function App() {
       <div className="loading-screen">
         <div className="loading-card">
           <div className="loading-icon">🧠</div>
-          <h2>AI Study Assistant</h2>
+          <h2>Study AI</h2>
           <p>Loading your study space...</p>
         </div>
       </div>
@@ -351,7 +352,7 @@ function App() {
           <div className="brand-icon">🧠</div>
 
           <div>
-            <h2>StudyAI</h2>
+            <h2>Study AI</h2>
             <span>Your study companion</span>
           </div>
         </div>
@@ -461,7 +462,15 @@ function App() {
         <section className="tool-page">
           <button className="back-button" type="button" onClick={() => openTool("profile")}>← Back to Profile</button>
           <div className="tool-page-header"><div><h1>Admin Dashboard ⚙️</h1><p>Monitor the backend and manage queued work.</p></div></div>
-          <div className="tool-page-content"><AdminDashboard accessToken={accessToken} /></div>
+          <div className="tool-page-content">
+            <AdminDashboard accessToken={accessToken} onManageUsers={() => openTool("admin-users")} />
+          </div>
+        </section>
+      ) : activeTool === "admin-users" ? (
+        <section className="tool-page">
+          <button className="back-button" type="button" onClick={() => openTool("admin")}>← Back to Admin Dashboard</button>
+          <div className="tool-page-header"><div><h1>User Management 👥</h1><p>Review accounts and control access to Study AI.</p></div></div>
+          <div className="tool-page-content"><UserManagement accessToken={accessToken} /></div>
         </section>
       ) : activeTool === "reports" ? (
         <section className="tool-page">
@@ -665,7 +674,7 @@ function App() {
         <header className="topbar">
 
           <div>
-            <h1>AI Study Assistant</h1>
+            <h1>Study AI</h1>
             <p>Learn smarter. Study better. 🚀</p>
           </div>
 

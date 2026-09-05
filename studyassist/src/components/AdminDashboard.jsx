@@ -8,7 +8,7 @@ function dateLabel(value) {
   return new Date(value).toLocaleString();
 }
 
-function AdminDashboard({ accessToken }) {
+function AdminDashboard({ accessToken, onManageUsers }) {
   const [overview, setOverview] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [logs, setLogs] = useState([]);
@@ -92,6 +92,7 @@ function AdminDashboard({ accessToken }) {
           <p>Live backend totals and background job controls.</p>
         </div>
         <div className="operations-actions">
+          <button type="button" onClick={onManageUsers}>👥 Manage users</button>
           <button type="button" onClick={() => loadAdminData(offset)} disabled={loading}>↻ Refresh</button>
           <button className="operations-primary" type="button" onClick={runWorker} disabled={busyJob === "worker"}>
             {busyJob === "worker" ? "Running…" : "Run jobs now"}

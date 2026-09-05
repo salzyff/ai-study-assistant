@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { isAdminUser } from "../src/middleware/requireAdmin.js";
+import { adminUserProtectionReason, isAdminUser } from "../src/middleware/requireAdmin.js";
 import { getRecentLogs, logger } from "../src/utils/logger.js";
 
 test("isAdminUser accepts an app metadata administrator", () => {
@@ -16,4 +16,18 @@ test("structured logger keeps a bounded recent view", () => {
   const [entry] = getRecentLogs(1);
   assert.equal(entry.message, "admin_test_event");
   assert.equal(entry.status, 200);
+});
+
+test("admin user management protects the signed-in account", () => {
+  assert.equal(
+    adminUserProtectionReason({ id: "user-1", app_metadata: {} }, "user-1"),
+    "You cannot manage your own account here",
+  );
+});
+
+test("admin user management protects other administrators", () => {
+  assert.equal(
+    adminUserProtectionReason({ id: "user-2", app_metadata: { role: "admin" } }, "user-1"),
+    "Administrator accounts are protected",
+  );
 });

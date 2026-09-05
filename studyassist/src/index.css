@@ -4185,6 +4185,80 @@
 .log-level-warn { background: #fef3c7; color: #a16207; }
 .log-level-error { background: #fee2e2; color: #b91c1c; }
 
+.user-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.user-toolbar-actions input {
+  min-width: 230px;
+  padding: 10px 12px;
+  border: 1px solid #d9d6ef;
+  border-radius: 9px;
+  outline: none;
+  color: #29283b;
+  font: inherit;
+}
+
+.user-toolbar-actions input:focus {
+  border-color: #6c63ff;
+  box-shadow: 0 0 0 3px rgba(108, 99, 255, .1);
+}
+
+.user-table td:first-child strong,
+.user-table td:first-child small {
+  display: block;
+}
+
+.user-table td:first-child small {
+  margin-top: 4px;
+  color: #8b899b;
+}
+
+.user-status,
+.user-admin-badge {
+  display: inline-flex;
+  margin-right: 5px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.user-status-active { background: #dcfce7; color: #15803d; }
+.user-status-suspended { background: #fee2e2; color: #b91c1c; }
+.user-admin-badge { background: #ede9fe; color: #5b21b6; }
+
+.user-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.user-actions > button,
+.user-actions > .delete-confirmation > button {
+  padding: 8px 10px;
+}
+
+.user-actions > button:first-child {
+  border: 1px solid #d9d6ef;
+  border-radius: 8px;
+  background: #f8f7ff;
+  color: #554dc7;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.protected-account {
+  color: #8b899b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
 @media (max-width: 900px) {
   .admin-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .report-results { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -4194,6 +4268,8 @@
   .operations-toolbar,
   .admin-section-heading { align-items: flex-start; flex-direction: column; }
   .operations-actions { width: 100%; flex-wrap: wrap; }
+  .user-toolbar-actions { width: 100%; flex-direction: column; align-items: stretch; }
+  .user-toolbar-actions input { width: 100%; min-width: 0; }
   .operations-toolbar button { width: 100%; }
   .admin-stat-grid,
   .report-results { grid-template-columns: 1fr; }

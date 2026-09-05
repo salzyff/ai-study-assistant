@@ -109,7 +109,7 @@ Provide a small hint for each question, but do not reveal the answers.
 // Public route
 app.get("/", (req, res) => {
   res.json({
-    message: "AI Study Assistant backend is running",
+    message: "Study AI backend is running",
   });
 });
 
