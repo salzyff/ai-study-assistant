@@ -20,6 +20,7 @@ function UserManagement({ accessToken }) {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [busyUser, setBusyUser] = useState("");
+  const [promoteUserId, setPromoteUserId] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
@@ -78,6 +79,26 @@ function UserManagement({ accessToken }) {
     await loadUsers(offset);
   }
 
+  async function promoteUser(user) {
+    try {
+      setBusyUser(user.id);
+      setError("");
+      setMessage("");
+      const data = await apiRequest(`/api/admin/users/${user.id}/role`, {
+        accessToken,
+        method: "PATCH",
+        body: { role: "admin" },
+      });
+      setPromoteUserId("");
+      setMessage(data.message);
+      await loadUsers(offset);
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setBusyUser("");
+    }
+  }
+
   return (
     <div className="operations-page">
       <div className="operations-toolbar user-toolbar">
@@ -132,6 +153,23 @@ function UserManagement({ accessToken }) {
                         <button type="button" disabled={busyUser === user.id} onClick={() => changeStatus(user)}>
                           {busyUser === user.id ? "Updating…" : suspended ? "Reactivate" : "Suspend"}
                         </button>
+                        {promoteUserId === user.id ? (
+                          <span className="delete-confirmation promote-confirmation" role="group" aria-label={`Promote ${user.email} to administrator`}>
+                            <span className="delete-confirmation-message">
+                              Promote {user.email}? They will receive full administrator access.
+                            </span>
+                            <button className="delete-confirmation-accept" type="button" disabled={busyUser === user.id} onClick={() => promoteUser(user)}>
+                              {busyUser === user.id ? "Promoting…" : "Yes, promote"}
+                            </button>
+                            <button className="delete-confirmation-cancel" type="button" disabled={busyUser === user.id} onClick={() => setPromoteUserId("")}>
+                              Cancel
+                            </button>
+                          </span>
+                        ) : (
+                          <button className="promote-user-button" type="button" disabled={busyUser === user.id} onClick={() => setPromoteUserId(user.id)}>
+                            Promote to admin
+                          </button>
+                        )}
                         <DeleteConfirmation
                           buttonLabel="Delete"
                           confirmation={`Delete ${user.email}? This removes their access and cannot be undone.`}

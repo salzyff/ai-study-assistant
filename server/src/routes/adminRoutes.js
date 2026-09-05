@@ -4,7 +4,7 @@ import { adminUserProtectionReason, isAdminUser, requireAdmin } from "../middlew
 import { paginationResult, parsePagination } from "../utils/pagination.js";
 import { RequestValidationError, uuidField } from "../utils/validation.js";
 import { runBackgroundJobsOnce } from "../services/backgroundJobs.js";
-import { getRecentLogs } from "../utils/logger.js";
+import { getRecentLogs, logger } from "../utils/logger.js";
 
 const router = express.Router();
 
@@ -96,6 +96,40 @@ async function getManageableUser(userId, currentUserId) {
   if (protectionReason) return { status: target.id === currentUserId ? 400 : 403, error: protectionReason };
   return { target };
 }
+
+router.patch("/users/:userId/role", async (req, res) => {
+  try {
+    const userId = uuidField(req.params.userId, "userId");
+    if (req.body.role !== "admin") {
+      return res.status(400).json({ error: "role must be admin" });
+    }
+
+    const manageable = await getManageableUser(userId, req.user.id);
+    if (!manageable.target) return res.status(manageable.status).json({ error: manageable.error });
+
+    const { data, error } = await supabase.auth.admin.updateUserById(userId, {
+      app_metadata: {
+        ...(manageable.target.app_metadata || {}),
+        role: "admin",
+      },
+    });
+    if (error) throw error;
+
+    logger.info("admin_user_promoted", {
+      adminUserId: req.user.id,
+      targetUserId: userId,
+    });
+
+    res.json({
+      user: { id: data.user.id, email: data.user.email, isAdmin: true },
+      message: "User promoted to administrator. They should sign out and sign in again to refresh access.",
+    });
+  } catch (error) {
+    if (error instanceof RequestValidationError) return res.status(400).json({ error: error.message });
+    console.error("Admin promote user error:", error);
+    res.status(500).json({ error: "Could not promote this user" });
+  }
+});
 
 router.patch("/users/:userId/status", async (req, res) => {
   try {

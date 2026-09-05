@@ -76,6 +76,7 @@ Set `ADMIN_EMAILS` on Render, then sign in with one of those accounts.
 - `GET /api/admin/logs` returns a protected rolling view of recent structured server events.
 - `GET /api/admin/users` lists authentication accounts with pagination.
 - `PATCH /api/admin/users/:userId/status` suspends or reactivates a non-admin account.
+- `PATCH /api/admin/users/:userId/role` promotes a non-admin account to administrator.
 - `DELETE /api/admin/users/:userId` soft-deletes a non-admin account.
 - `GET /api/admin/jobs` lists background jobs with pagination.
 - `POST /api/admin/jobs/:jobId/retry` retries a failed job.

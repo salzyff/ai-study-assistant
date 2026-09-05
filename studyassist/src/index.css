@@ -4253,6 +4253,16 @@
   cursor: pointer;
 }
 
+.user-actions > .promote-user-button {
+  border-color: #5945e8;
+  background: #5945e8;
+  color: #fff;
+}
+
+.promote-confirmation {
+  min-width: min(360px, 100%);
+}
+
 .protected-account {
   color: #8b899b;
   font-size: 12px;
