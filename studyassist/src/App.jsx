@@ -367,15 +367,6 @@ function App() {
           New Chat
         </button>
 
-        <button
-          className="back-button"
-          type="button"
-          onClick={() => openTool(null)}
-          aria-current={activeTool === null ? "page" : undefined}
-        >
-          Home
-        </button>
-
         <div className="history-header">
           <span>Recent chats</span>
         </div>
@@ -697,6 +688,9 @@ function App() {
         {/* CONTROLS */}
         {activeTool === "chat" && (
         <>
+        <button className="back-button" type="button" onClick={() => openTool(null)}>
+          ← Back
+        </button>
         <section className="study-controls">
 
           <div className="control-group">
@@ -914,9 +908,6 @@ function App() {
         )}
         {activeTool === null && (
         <>
-        <button className="new-chat-button" type="button" onClick={startNewChat} disabled={loading}>
-          ＋ Start a new chat
-        </button>
         {(sessionId || messages.length > 0) && (
           <button className="back-button" type="button" onClick={() => openTool("chat")}>
             Continue current chat
