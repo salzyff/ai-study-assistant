@@ -274,6 +274,10 @@ router.post("/:quizId/submit", async (req, res) => {
       return { questionId: uuidField(answer.questionId, "questionId"), selectedOption };
     });
 
+    if (new Set(normalizedAnswers.map((answer) => answer.questionId)).size !== normalizedAnswers.length) {
+      return res.status(400).json({ error: "Each quiz question can only be answered once" });
+    }
+
     const { data: quiz, error: quizError } = await supabase
       .from("quizzes")
       .select("id, subject, topic, difficulty, mode, duration_minutes")
@@ -283,12 +287,29 @@ router.post("/:quizId/submit", async (req, res) => {
     if (quizError) throw quizError;
     if (!quiz) return res.status(404).json({ error: "Quiz not found" });
 
+    const { data: previousAttempt, error: previousAttemptError } = await supabase
+      .from("quiz_attempts")
+      .select("id")
+      .eq("quiz_id", quiz.id)
+      .eq("user_id", req.user.id)
+      .limit(1)
+      .maybeSingle();
+    if (previousAttemptError) throw previousAttemptError;
+    if (previousAttempt) {
+      return res.status(409).json({ error: "This quiz has already been submitted" });
+    }
+
     const { data: questions, error: questionError } = await supabase
       .from("quiz_questions")
       .select("id, question, options, correct_option, explanation, topic, difficulty")
       .eq("quiz_id", quiz.id)
       .order("created_at", { ascending: true });
     if (questionError) throw questionError;
+
+    const questionIds = new Set(questions.map((question) => question.id));
+    if (normalizedAnswers.some((answer) => !questionIds.has(answer.questionId))) {
+      return res.status(400).json({ error: "One or more answers do not belong to this quiz" });
+    }
 
     const submitted = new Map(normalizedAnswers.map((answer) => [answer.questionId, answer.selectedOption]));
     let score = 0;
@@ -322,7 +343,14 @@ router.post("/:quizId/submit", async (req, res) => {
       .single();
     if (attemptError) throw attemptError;
 
-    const learning = await recordQuizLearning({ userId: req.user.id, quiz, questions, results, score });
+    let learning = { mistakesSaved: 0, mastery: null };
+    try {
+      learning = await recordQuizLearning({ userId: req.user.id, quiz, questions, results, score });
+    } catch (learningError) {
+      // The quiz attempt is already saved, so return its result even if the
+      // optional mastery/mistake tracking update fails.
+      console.error("Quiz learning update error:", learningError);
+    }
     const percentage = questions.length ? Math.round((score / questions.length) * 100) : 0;
 
     res.json({

@@ -3,6 +3,13 @@ import "dotenv/config";
 import { GoogleGenAI } from "@google/genai";
 import { supabase } from "../supabase.js";
 import { recordAiUsage } from "../middleware/aiUsage.js";
+import {
+  RequestValidationError,
+  dateField,
+  enumField,
+  integerField,
+  stringField,
+} from "../utils/validation.js";
 
 const router = express.Router();
 
@@ -51,46 +58,11 @@ const studyPlanSchema = {
 
 router.post("/generate", async (req, res) => {
   try {
-    const {
-      subject,
-      topics,
-      examDate,
-      availableDays = 7,
-    } = req.body;
-
-    if (!subject || typeof subject !== "string") {
-      return res.status(400).json({
-        error: "A subject is required",
-      });
-    }
-
-
-    if (subject.trim().length > 80) {
-      return res.status(400).json({
-        error: "The subject must be 80 characters or fewer",
-      });
-    }
-
-    if (!topics || typeof topics !== "string") {
-      return res.status(400).json({
-        error: "Study topics are required",
-      });
-    }
-
-
-    if (!topics.trim() || topics.trim().length > 4000) {
-      return res.status(400).json({
-        error: "Study topics must be between 1 and 4000 characters",
-      });
-    }
-
-    if (!examDate || Number.isNaN(Date.parse(examDate))) {
-      return res.status(400).json({
-        error: "A valid exam date is required",
-      });
-    }
-
-    const parsedExamDate = new Date(examDate);
+    const subject = stringField(req.body.subject, "subject", { max: 80 });
+    const topics = stringField(req.body.topics, "topics", { max: 4000 });
+    const parsedExamDate = new Date(
+      dateField(req.body.examDate, "examDate", { required: true }),
+    );
 
     if (parsedExamDate <= new Date()) {
       return res.status(400).json({
@@ -98,9 +70,10 @@ router.post("/generate", async (req, res) => {
       });
     }
 
-    const safeAvailableDays = Math.min(
-      Math.max(Number(availableDays) || 7, 1),
-      14
+    const safeAvailableDays = integerField(
+      req.body.availableDays ?? 7,
+      "availableDays",
+      { min: 1, max: 14 },
     );
 
     const prompt = `
@@ -133,26 +106,30 @@ Rules:
     });
 
     const generatedPlan = JSON.parse(response.output_text);
+    const generatedTasks = Array.isArray(generatedPlan.tasks)
+      ? generatedPlan.tasks
+      : [];
 
-    const tasks = generatedPlan.tasks
+    const tasks = generatedTasks
       .slice(0, safeAvailableDays)
-      .filter((task) => {
-        const taskDate = new Date(task.due_date);
+      .flatMap((task) => {
+        try {
+          const dueDate = dateField(task?.due_date, "generated due date", { required: true });
+          const taskDate = new Date(dueDate);
+          if (taskDate <= new Date() || taskDate >= parsedExamDate) return [];
 
-        return (
-          !Number.isNaN(taskDate.getTime()) &&
-          taskDate > new Date() &&
-          taskDate < parsedExamDate
-        );
-      })
-      .map((task) => ({
-        user_id: req.user.id,
-        title: task.title,
-        description: task.description,
-        subject,
-        due_date: new Date(task.due_date).toISOString(),
-        priority: task.priority,
-      }));
+          return [{
+            user_id: req.user.id,
+            title: stringField(task?.title, "generated title", { max: 160 }),
+            description: stringField(task?.description, "generated description", { max: 2000 }),
+            subject,
+            due_date: dueDate,
+            priority: enumField(task?.priority, "generated priority", ["low", "medium", "high"]),
+          }];
+        } catch {
+          return [];
+        }
+      });
 
     if (tasks.length === 0) {
       return res.status(422).json({
@@ -176,6 +153,10 @@ Rules:
       tasks: data,
     });
   } catch (error) {
+    if (error instanceof RequestValidationError) {
+      return res.status(400).json({ error: error.message });
+    }
+
     console.error("Study plan error:", error);
 
     res.status(500).json({

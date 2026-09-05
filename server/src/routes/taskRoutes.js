@@ -3,7 +3,13 @@ import "dotenv/config";
 import { GoogleGenAI } from "@google/genai";
 import { supabase } from "../supabase.js";
 import { recordAiUsage } from "../middleware/aiUsage.js";
-import { uuidField } from "../utils/validation.js";
+import {
+  RequestValidationError,
+  dateField,
+  enumField,
+  stringField,
+  uuidField,
+} from "../utils/validation.js";
 
 const router = express.Router();
 
@@ -80,41 +86,20 @@ router.get("/", async (req, res) => {
 // Create a task for the logged-in student
 router.post("/", async (req, res) => {
   try {
-    const {
-      title,
-      description = null,
-      subject = "General",
-      dueDate = null,
-      priority = "medium",
-    } = req.body;
-
-    if (
-      !title ||
-      typeof title !== "string" ||
-      !title.trim()
-    ) {
-      return res.status(400).json({
-        error: "A task title is required",
-      });
-    }
-
-    if (!allowedPriorities.includes(priority)) {
-      return res.status(400).json({
-        error: "Priority must be low, medium, or high",
-      });
-    }
-
-    if (dueDate && Number.isNaN(Date.parse(dueDate))) {
-      return res.status(400).json({
-        error: "The due date is invalid",
-      });
-    }
+    const title = stringField(req.body.title, "title", { max: 160 });
+    const description = stringField(req.body.description, "description", {
+      required: false,
+      max: 2000,
+    });
+    const subject = stringField(req.body.subject || "General", "subject", { max: 80 });
+    const dueDate = dateField(req.body.dueDate, "dueDate");
+    const priority = enumField(req.body.priority, "priority", allowedPriorities, "medium");
 
     const { data, error } = await supabase
       .from("tasks")
       .insert({
         user_id: req.user.id,
-        title: title.trim(),
+        title,
         description,
         subject,
         due_date: dueDate,
@@ -131,6 +116,10 @@ router.post("/", async (req, res) => {
       task: data,
     });
   } catch (error) {
+    if (error instanceof RequestValidationError) {
+      return res.status(400).json({ error: error.message });
+    }
+
     console.error("Create task error:", error);
 
     res.status(500).json({
@@ -241,6 +230,7 @@ Rules:
 // Update only one of the logged-in student's tasks
 router.patch("/:taskId", async (req, res) => {
   try {
+    const taskId = uuidField(req.params.taskId, "taskId");
     const {
       title,
       description,
@@ -249,34 +239,6 @@ router.patch("/:taskId", async (req, res) => {
       priority,
       completed,
     } = req.body;
-
-    if (
-      title !== undefined &&
-      (typeof title !== "string" || !title.trim())
-    ) {
-      return res.status(400).json({
-        error: "The task title cannot be empty",
-      });
-    }
-
-    if (
-      priority !== undefined &&
-      !allowedPriorities.includes(priority)
-    ) {
-      return res.status(400).json({
-        error: "Priority must be low, medium, or high",
-      });
-    }
-
-    if (
-      dueDate !== undefined &&
-      dueDate !== null &&
-      Number.isNaN(Date.parse(dueDate))
-    ) {
-      return res.status(400).json({
-        error: "The due date is invalid",
-      });
-    }
 
     if (
       completed !== undefined &&
@@ -292,23 +254,26 @@ router.patch("/:taskId", async (req, res) => {
     };
 
     if (title !== undefined) {
-      updates.title = title.trim();
+      updates.title = stringField(title, "title", { max: 160 });
     }
 
     if (description !== undefined) {
-      updates.description = description;
+      updates.description = stringField(description, "description", {
+        required: false,
+        max: 2000,
+      });
     }
 
     if (subject !== undefined) {
-      updates.subject = subject;
+      updates.subject = stringField(subject, "subject", { max: 80 });
     }
 
     if (dueDate !== undefined) {
-      updates.due_date = dueDate;
+      updates.due_date = dateField(dueDate, "dueDate");
     }
 
     if (priority !== undefined) {
-      updates.priority = priority;
+      updates.priority = enumField(priority, "priority", allowedPriorities);
     }
 
     if (completed !== undefined) {
@@ -319,7 +284,7 @@ router.patch("/:taskId", async (req, res) => {
     const { data, error } = await supabase
       .from("tasks")
       .update(updates)
-      .eq("id", req.params.taskId)
+      .eq("id", taskId)
       .eq("user_id", req.user.id)
       .select()
       .maybeSingle();
@@ -338,6 +303,10 @@ router.patch("/:taskId", async (req, res) => {
       task: data,
     });
   } catch (error) {
+    if (error instanceof RequestValidationError) {
+      return res.status(400).json({ error: error.message });
+    }
+
     console.error("Update task error:", error);
 
     res.status(500).json({
@@ -349,10 +318,11 @@ router.patch("/:taskId", async (req, res) => {
 // Delete only one of the logged-in student's tasks
 router.delete("/:taskId", async (req, res) => {
   try {
+    const taskId = uuidField(req.params.taskId, "taskId");
     const { data, error } = await supabase
       .from("tasks")
       .delete()
-      .eq("id", req.params.taskId)
+      .eq("id", taskId)
       .eq("user_id", req.user.id)
       .select("id")
       .maybeSingle();
@@ -371,6 +341,10 @@ router.delete("/:taskId", async (req, res) => {
       message: "Task deleted",
     });
   } catch (error) {
+    if (error instanceof RequestValidationError) {
+      return res.status(400).json({ error: error.message });
+    }
+
     console.error("Delete task error:", error);
 
     res.status(500).json({

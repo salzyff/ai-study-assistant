@@ -4,13 +4,15 @@ const allowedOrigins = (
   process.env.CLIENT_URLS || "http://localhost:5173"
 )
   .split(",")
-  .map((origin) => origin.trim());
+  .map((origin) => origin.trim().replace(/\/$/, ""))
+  .filter(Boolean);
 
 export const corsOptions = {
   origin(origin, callback) {
     // Requests such as PowerShell and server-to-server calls
     // might not include an Origin header.
-    if (!origin || allowedOrigins.includes(origin)) {
+    const normalizedOrigin = origin?.replace(/\/$/, "");
+    if (!origin || allowedOrigins.includes(normalizedOrigin)) {
       return callback(null, true);
     }
 

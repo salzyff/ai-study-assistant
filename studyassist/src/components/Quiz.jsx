@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { SUBJECTS } from "../constants/subjects";
-
-const API_URL = import.meta.env.VITE_API_URL;
+import { apiRequest } from "../api";
 
 function Quiz({ accessToken }) {
   const [subject, setSubject] = useState("Biology");
@@ -21,7 +20,7 @@ function Quiz({ accessToken }) {
   async function generateQuiz(event) {
     event.preventDefault();
 
-    if (!topic.trim()) {
+    if (loading || !topic.trim()) {
       return;
     }
 
@@ -34,29 +33,15 @@ function Quiz({ accessToken }) {
       setResults([]);
       setScore(null);
 
-      const response = await fetch(
-        `${API_URL}/api/quizzes/generate`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            subject,
-            topic: topic.trim(),
-            numberOfQuestions: Number(numberOfQuestions),
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.error || "Could not generate quiz"
-        );
-      }
+      const data = await apiRequest("/api/quizzes/generate", {
+        accessToken,
+        method: "POST",
+        body: {
+          subject,
+          topic: topic.trim(),
+          numberOfQuestions: Number(numberOfQuestions),
+        },
+      });
 
       setQuiz(data.quiz);
       setQuestions(data.questions);
@@ -68,7 +53,7 @@ function Quiz({ accessToken }) {
   }
 
   function selectAnswer(questionId, optionIndex) {
-    if (score !== null) {
+    if (loading || score !== null) {
       return;
     }
 
@@ -79,7 +64,7 @@ function Quiz({ accessToken }) {
   }
 
   async function submitQuiz() {
-    if (!quiz) {
+    if (!quiz || loading || score !== null) {
       return;
     }
 
@@ -94,27 +79,11 @@ function Quiz({ accessToken }) {
         })
       );
 
-      const response = await fetch(
-        `${API_URL}/api/quizzes/${quiz.id}/submit`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            answers: submittedAnswers,
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.error || "Could not submit quiz"
-        );
-      }
+      const data = await apiRequest(`/api/quizzes/${quiz.id}/submit`, {
+        accessToken,
+        method: "POST",
+        body: { answers: submittedAnswers },
+      });
 
       setScore({
         correct: data.score,

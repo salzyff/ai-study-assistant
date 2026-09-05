@@ -130,11 +130,13 @@ router.patch(
       if (!session) return res.status(404).json({ error: "Study session not found" });
 
       if (session.task_id) {
-        await supabase
+        const { error: taskError } = await supabase
           .from("tasks")
           .update({ completed: true, completed_at: session.completed_at, updated_at: new Date().toISOString() })
           .eq("id", session.task_id)
           .eq("user_id", req.user.id);
+
+        if (taskError) throw taskError;
       }
 
       res.json({ session });

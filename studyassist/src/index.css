@@ -3863,3 +3863,16 @@
     padding: 22px;
   }
 }
+
+/* On-screen deletion controls */
+.delete-confirmation { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 8px; max-width: 100%; padding: 12px; border: 1px solid #e7e1f5; border-radius: 12px; background: #faf8ff; color: #302c48; font-size: 13px; }
+.delete-confirmation-message { flex-basis: 100%; overflow-wrap: anywhere; line-height: 1.5; }
+.delete-confirmation button, .task-study-button { border: 1px solid #e0daf0; border-radius: 9px; padding: 10px 14px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.delete-confirmation .delete-confirmation-accept { background: #5945e8; border-color: #5945e8; color: white; }
+.delete-confirmation .delete-confirmation-cancel { background: white; color: #514969; }
+.delete-confirmation button:focus-visible, .task-study-button:focus-visible { outline: 3px solid #b7a7ff; outline-offset: 3px; }
+.delete-confirmation button:disabled, .task-study-button:disabled, .new-chat-button:disabled { opacity: .6; cursor: wait; }
+.delete-confirmation-error { flex-basis: 100%; color: #b42318; line-height: 1.5; }
+.task-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; min-width: 0; }
+.task-study-button { background: #f0ebff; color: #5945e8; }
+@media (max-width: 640px) { .task-item { flex-wrap: wrap; } .task-actions { width: 100%; justify-content: flex-start; } }

@@ -3,8 +3,6 @@ import { apiRequest } from "../api";
 import { SUBJECTS } from "../constants/subjects";
 import DeleteConfirmation from "./DeleteConfirmation";
 
-const API_URL = import.meta.env.VITE_API_URL;
-
 function TaskPlanner({ accessToken }) {
   const [tasks, setTasks] = useState([]);
   const [title, setTitle] = useState("");
@@ -19,23 +17,15 @@ function TaskPlanner({ accessToken }) {
   const [actualMinutes, setActualMinutes] = useState(25);
   const [studyMessage, setStudyMessage] = useState("");
 
-  const getHeaders = useCallback((includeJson = false) => {
-    const headers = { Authorization: `Bearer ${accessToken}` };
-    if (includeJson) headers["Content-Type"] = "application/json";
-    return headers;
-  }, [accessToken]);
-
   const loadTasks = useCallback(async () => {
     try {
       setError("");
-      const response = await fetch(`${API_URL}/api/tasks`, { headers: getHeaders() });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Could not load tasks");
-      setTasks(data.tasks);
+      const data = await apiRequest("/api/tasks", { accessToken });
+      setTasks(data.tasks || []);
     } catch (requestError) {
       setError(requestError.message);
     }
-  }, [getHeaders]);
+  }, [accessToken]);
 
   useEffect(() => {
     function refreshTasks() {
@@ -55,24 +45,22 @@ function TaskPlanner({ accessToken }) {
 
   async function createTask(event) {
     event.preventDefault();
-    if (!title.trim()) return;
+    if (loading || !title.trim()) return;
 
     try {
       setLoading(true);
       setError("");
-      const response = await fetch(`${API_URL}/api/tasks`, {
+      await apiRequest("/api/tasks", {
+        accessToken,
         method: "POST",
-        headers: getHeaders(true),
-        body: JSON.stringify({
+        body: {
           title: title.trim(),
           description: description.trim() || null,
           subject,
           priority,
           dueDate: dueDate ? new Date(dueDate).toISOString() : null,
-        }),
+        },
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Could not create task");
 
       setTitle("");
       setDescription("");
@@ -89,13 +77,11 @@ function TaskPlanner({ accessToken }) {
   async function toggleTask(task) {
     try {
       setError("");
-      const response = await fetch(`${API_URL}/api/tasks/${task.id}`, {
+      await apiRequest(`/api/tasks/${task.id}`, {
+        accessToken,
         method: "PATCH",
-        headers: getHeaders(true),
-        body: JSON.stringify({ completed: !task.completed }),
+        body: { completed: !task.completed },
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Could not update task");
       await loadTasks();
     } catch (requestError) {
       setError(requestError.message);
@@ -103,21 +89,17 @@ function TaskPlanner({ accessToken }) {
   }
 
   async function deleteTask(taskId) {
-    try {
-      setError("");
-      const response = await fetch(`${API_URL}/api/tasks/${taskId}`, {
-        method: "DELETE",
-        headers: getHeaders(),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Could not delete task");
-      await loadTasks();
-    } catch (requestError) {
-      setError(requestError.message);
-    }
+    setError("");
+    await apiRequest(`/api/tasks/${taskId}`, {
+      accessToken,
+      method: "DELETE",
+    });
+    setTasks((current) => current.filter((task) => task.id !== taskId));
+    window.dispatchEvent(new Event("tasks-updated"));
   }
 
   async function createAiStudySession(task) {
+    if (studySessionLoading || loading) return;
     try {
       setStudySessionLoading(task.id);
       setError("");
@@ -136,7 +118,7 @@ function TaskPlanner({ accessToken }) {
   }
 
   async function completeAiStudySession() {
-    if (!studySession) return;
+    if (!studySession || loading) return;
 
     try {
       setLoading(true);
@@ -170,7 +152,7 @@ function TaskPlanner({ accessToken }) {
         <div className="task-form-grid">
           <div className="task-field task-field-wide">
             <label htmlFor="task-title">Task title</label>
-            <input id="task-title" type="text" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="e.g. Revise quadratic equations" required />
+            <input id="task-title" type="text" value={title} onChange={(event) => setTitle(event.target.value)} maxLength="160" placeholder="e.g. Revise quadratic equations" required />
           </div>
           <div className="task-field">
             <label htmlFor="task-subject">Subject</label>
@@ -190,7 +172,7 @@ function TaskPlanner({ accessToken }) {
           </div>
           <div className="task-field task-field-wide">
             <label htmlFor="task-description">Description</label>
-            <textarea id="task-description" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Add some details about this task..." rows="4" />
+            <textarea id="task-description" value={description} onChange={(event) => setDescription(event.target.value)} maxLength="2000" placeholder="Add some details about this task..." rows="4" />
           </div>
         </div>
         <button className="create-task-button" type="submit" disabled={loading}>{loading ? "Creating..." : "＋ Create Task"}</button>
@@ -222,14 +204,15 @@ function TaskPlanner({ accessToken }) {
                     </div>
                   </div>
                 </div>
-                <div>
+                <div className="task-actions">
                   {!task.completed && (
-                    <button type="button" onClick={() => createAiStudySession(task)} disabled={studySessionLoading === task.id}>
+                    <button className="task-study-button" type="button" onClick={() => createAiStudySession(task)} disabled={Boolean(studySessionLoading) || loading}>
                       {studySessionLoading === task.id ? "Generating..." : "Create AI study session"}
                     </button>
                   )}{" "}
                   <DeleteConfirmation
                     className="task-delete"
+                    disabled={Boolean(studySessionLoading) || loading}
                     confirmation={`Delete “${task.title}” permanently?`}
                     onConfirm={() => deleteTask(task.id)}
                   />

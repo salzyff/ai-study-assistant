@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import Auth from "./components/Auth";
 import TaskPlanner from "./components/TaskPlanner";
@@ -15,21 +15,30 @@ import ResetPassword from "./components/ResetPassword";
 import Profile from "./components/Profile";
 import ChangePassword from "./components/ChangePassword";
 import { SUBJECTS } from "./constants/subjects";
+import { apiRequest } from "./api";
 
-const API_URL = import.meta.env.VITE_API_URL;
+const STUDY_MODES = ["ask", "explain", "summarize", "practice"];
+
+function loadPreferences() {
+  const defaults = { defaultSubject: "General", defaultMode: "ask" };
+
+  try {
+    const saved = JSON.parse(localStorage.getItem("studyai-preferences") || "{}");
+    return {
+      defaultSubject: SUBJECTS.includes(saved.defaultSubject)
+        ? saved.defaultSubject
+        : defaults.defaultSubject,
+      defaultMode: STUDY_MODES.includes(saved.defaultMode)
+        ? saved.defaultMode
+        : defaults.defaultMode,
+    };
+  } catch {
+    return defaults;
+  }
+}
 
 function App() {
-  const [preferences, setPreferences] = useState(() => {
-    try {
-      return {
-        defaultSubject: "General",
-        defaultMode: "ask",
-        ...JSON.parse(localStorage.getItem("studyai-preferences") || "{}"),
-      };
-    } catch {
-      return { defaultSubject: "General", defaultMode: "ask" };
-    }
-  });
+  const [preferences, setPreferences] = useState(loadPreferences);
   const [session, setSession] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [passwordRecovery, setPasswordRecovery] = useState(() =>
@@ -48,6 +57,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [error, setError] = useState("");
+  const navigationRequest = useRef(0);
 
   const accessToken = session?.access_token;
 
@@ -83,37 +93,17 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const getAuthHeaders = useCallback((includeJson = false) => {
-    const headers = {
-      Authorization: `Bearer ${accessToken}`,
-    };
-
-    if (includeJson) {
-      headers["Content-Type"] = "application/json";
-    }
-
-    return headers;
-  }, [accessToken]);
-
   const loadConversations = useCallback(async () => {
     try {
       setError("");
 
-      const response = await fetch(`${API_URL}/api/conversations`, {
-        headers: getAuthHeaders(),
-      });
+      const data = await apiRequest("/api/conversations", { accessToken });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Could not load conversations");
-      }
-
-      setConversations(data.conversations);
+      setConversations(data.conversations || []);
     } catch (requestError) {
       setError(requestError.message);
     }
-  }, [getAuthHeaders]);
+  }, [accessToken]);
 
   useEffect(() => {
     if (!accessToken) return undefined;
@@ -122,33 +112,31 @@ function App() {
   }, [accessToken, loadConversations]);
 
   async function openConversation(conversation) {
+    const requestId = ++navigationRequest.current;
     try {
       setError("");
       setHistoryLoading(true);
 
-      const response = await fetch(
-        `${API_URL}/api/conversations/${conversation.id}/messages`,
-        {
-          headers: getAuthHeaders(),
-        }
+      const data = await apiRequest(
+        `/api/conversations/${conversation.id}/messages`,
+        { accessToken },
       );
 
-      const data = await response.json();
+      if (requestId !== navigationRequest.current) return;
 
-      if (!response.ok) {
-        throw new Error(
-          data.error || "Could not load this conversation"
-        );
-      }
-
+      setActiveTool(null);
       setSessionId(conversation.id);
-      setSubject(conversation.subject);
-      setMode(conversation.mode);
-      setMessages(data.messages);
+      setSubject(SUBJECTS.includes(conversation.subject) ? conversation.subject : "General");
+      setMode(STUDY_MODES.includes(conversation.mode) ? conversation.mode : "ask");
+      setMessages(data.messages || []);
     } catch (requestError) {
-      setError(requestError.message);
+      if (requestId === navigationRequest.current) {
+        setError(requestError.message);
+      }
     } finally {
-      setHistoryLoading(false);
+      if (requestId === navigationRequest.current) {
+        setHistoryLoading(false);
+      }
     }
   }
 
@@ -172,24 +160,16 @@ function App() {
     ]);
 
     try {
-      const response = await fetch(`${API_URL}/api/chat`, {
+      const data = await apiRequest("/api/chat", {
+        accessToken,
         method: "POST",
-        headers: getAuthHeaders(true),
-        body: JSON.stringify({
+        body: {
           message: cleanMessage,
           subject,
           mode,
           sessionId,
-        }),
+        },
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.error || "Could not generate an answer"
-        );
-      }
 
       setSessionId(data.sessionId);
 
@@ -210,6 +190,9 @@ function App() {
   }
 
   function startNewChat() {
+    navigationRequest.current += 1;
+    setActiveTool(null);
+    setHistoryLoading(false);
     setSessionId(null);
     setMessages([]);
     setMessage("");
@@ -218,33 +201,38 @@ function App() {
     setError("");
   }
 
+  function openTool(tool) {
+    navigationRequest.current += 1;
+    setHistoryLoading(false);
+    setActiveTool(tool);
+    setError("");
+  }
+
+  function openToolWithKeyboard(event, tool) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openTool(tool);
+    }
+  }
+
   async function deleteConversation(conversationId) {
+    setError("");
     try {
-      setError("");
-
-      const response = await fetch(
-        `${API_URL}/api/conversations/${conversationId}`,
-        {
-          method: "DELETE",
-          headers: getAuthHeaders(),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.error || "Could not delete conversation"
-        );
-      }
+      await apiRequest(`/api/conversations/${conversationId}`, {
+        accessToken,
+        method: "DELETE",
+      });
 
       if (sessionId === conversationId) {
         startNewChat();
       }
 
-      await loadConversations();
+      setConversations((current) =>
+        current.filter((conversation) => conversation.id !== conversationId),
+      );
     } catch (requestError) {
       setError(requestError.message);
+      throw requestError;
     }
   }
 
@@ -254,13 +242,13 @@ function App() {
     const { error: logoutError } =
       await supabase.auth.signOut();
 
-    if (logoutError) {
-      setError(logoutError.message);
-    } else {
-      setConversations([]);
-      setMessages([]);
-      setSessionId(null);
-    }
+    if (logoutError) throw logoutError;
+
+    navigationRequest.current += 1;
+    setConversations([]);
+    setMessages([]);
+    setSessionId(null);
+    setActiveTool(null);
   }
 
   function finishPasswordRecovery() {
@@ -315,6 +303,7 @@ function App() {
           className="new-chat-button"
           type="button"
           onClick={startNewChat}
+          disabled={loading}
         >
           <span>＋</span>
           New Chat
@@ -365,7 +354,7 @@ function App() {
           <button
             className="user-card profile-button"
             type="button"
-            onClick={() => setActiveTool("profile")}
+            onClick={() => openTool("profile")}
           >
             <div className="avatar">
               {session.user.email?.charAt(0).toUpperCase()}
@@ -384,7 +373,7 @@ function App() {
       {/* MAIN AREA */}
       <main className="main-area">
       {activeTool === "change-password" ? (
-        <ChangePassword onBack={() => setActiveTool("profile")} />
+        <ChangePassword onBack={() => openTool("profile")} />
       ) : activeTool === "profile" ? (
         <Profile
           user={session.user}
@@ -394,9 +383,9 @@ function App() {
             setSubject(nextPreferences.defaultSubject);
             setMode(nextPreferences.defaultMode);
           }}
-          onBack={() => setActiveTool(null)}
+          onBack={() => openTool(null)}
           onLogout={logOut}
-          onChangePassword={() => setActiveTool("change-password")}
+          onChangePassword={() => openTool("change-password")}
         />
       ) : activeTool === "learning" ? (
 <section className="tool-page">
@@ -404,7 +393,7 @@ function App() {
   <button
     className="back-button"
     type="button"
-    onClick={() => setActiveTool(null)}
+    onClick={() => openTool(null)}
   >
     ← Back to Dashboard
   </button>
@@ -427,7 +416,7 @@ function App() {
   <button
     className="back-button"
     type="button"
-    onClick={() => setActiveTool(null)}
+    onClick={() => openTool(null)}
   >
     ← Back to Dashboard
   </button>
@@ -450,7 +439,7 @@ function App() {
   <button
     className="back-button"
     type="button"
-    onClick={() => setActiveTool(null)}
+    onClick={() => openTool(null)}
   >
     ← Back to Dashboard
   </button>
@@ -473,7 +462,7 @@ function App() {
     <button
       className="back-button"
       type="button"
-      onClick={() => setActiveTool(null)}
+      onClick={() => openTool(null)}
     >
       ← Back to Dashboard
     </button>
@@ -496,7 +485,7 @@ function App() {
     <button
       className="back-button"
       type="button"
-      onClick={() => setActiveTool(null)}
+      onClick={() => openTool(null)}
     >
       ← Back to Dashboard
     </button>
@@ -517,7 +506,7 @@ function App() {
   <section className="tool-page">
     <button
       className="back-button"
-      onClick={() => setActiveTool(null)}
+      onClick={() => openTool(null)}
     >
       ← Back to Dashboard
     </button>
@@ -549,7 +538,7 @@ function App() {
 
     <button
       className="back-button"
-      onClick={() => setActiveTool(null)}
+      onClick={() => openTool(null)}
     >
       ← Back to Dashboard
     </button>
@@ -571,7 +560,7 @@ function App() {
 
     <button
       className="back-button"
-      onClick={() => setActiveTool(null)}
+      onClick={() => openTool(null)}
     >
       ← Back to Dashboard
     </button>
@@ -785,6 +774,7 @@ function App() {
 
 <textarea
   value={message}
+  maxLength="6000"
   onChange={(event) =>
     setMessage(event.target.value)
   }
@@ -826,7 +816,10 @@ function App() {
 
           <div
     className="tool-card quiz-card"
-    onClick={() => setActiveTool("quiz")}
+    onClick={() => openTool("quiz")}
+    onKeyDown={(event) => openToolWithKeyboard(event, "quiz")}
+    role="button"
+    tabIndex="0"
 >
               <div className="tool-icon">📝</div>
               <div>
@@ -837,7 +830,10 @@ function App() {
 
             <div
   className="tool-card plan-card"
-  onClick={() => setActiveTool("plan")}
+  onClick={() => openTool("plan")}
+  onKeyDown={(event) => openToolWithKeyboard(event, "plan")}
+  role="button"
+  tabIndex="0"
 >
               <div className="tool-icon">📅</div>
               <div>
@@ -848,7 +844,10 @@ function App() {
 
             <div
   className="tool-card task-card"
-  onClick={() => setActiveTool("task")}
+  onClick={() => openTool("task")}
+  onKeyDown={(event) => openToolWithKeyboard(event, "task")}
+  role="button"
+  tabIndex="0"
 >
               <div className="tool-icon">✅</div>
               <div>
@@ -869,7 +868,10 @@ function App() {
 
   <div
     className="tool-card notes-card"
-    onClick={() => setActiveTool("notes")}
+    onClick={() => openTool("notes")}
+    onKeyDown={(event) => openToolWithKeyboard(event, "notes")}
+    role="button"
+    tabIndex="0"
   >
     <div className="tool-icon">📄</div>
     <div>
@@ -880,7 +882,10 @@ function App() {
 
   <div
     className="tool-card flashcards-card"
-    onClick={() => setActiveTool("flashcards")}
+    onClick={() => openTool("flashcards")}
+    onKeyDown={(event) => openToolWithKeyboard(event, "flashcards")}
+    role="button"
+    tabIndex="0"
   >
     <div className="tool-icon">🃏</div>
     <div>
@@ -891,7 +896,10 @@ function App() {
 
   <div
     className="tool-card progress-card"
-    onClick={() => setActiveTool("progress")}
+    onClick={() => openTool("progress")}
+    onKeyDown={(event) => openToolWithKeyboard(event, "progress")}
+    role="button"
+    tabIndex="0"
   >
     <div className="tool-icon">📊</div>
     <div>
@@ -902,7 +910,10 @@ function App() {
 
   <div
     className="tool-card dashboard-card"
-    onClick={() => setActiveTool("dashboard")}
+    onClick={() => openTool("dashboard")}
+    onKeyDown={(event) => openToolWithKeyboard(event, "dashboard")}
+    role="button"
+    tabIndex="0"
   >
     <div className="tool-icon">📈</div>
     <div>
@@ -913,7 +924,10 @@ function App() {
 
   <div
     className="tool-card learning-card"
-    onClick={() => setActiveTool("learning")}
+    onClick={() => openTool("learning")}
+    onKeyDown={(event) => openToolWithKeyboard(event, "learning")}
+    role="button"
+    tabIndex="0"
   >
     <div className="tool-icon">🎓</div>
     <div>

@@ -25,6 +25,7 @@ import {
   getAiUsage,
   recordAiUsage,
 } from "./middleware/aiUsage.js";
+import { RequestValidationError, uuidField } from "./utils/validation.js";
 
 dotenv.config();
 
@@ -38,7 +39,8 @@ const ai = new GoogleGenAI({
 const isProduction = process.env.NODE_ENV === "production";
 
 // Render places the Express server behind one reverse proxy.
-app.set("trust proxy", 1);
+// Keep proxy trust off locally so clients cannot spoof rate-limit IPs.
+app.set("trust proxy", process.env.RENDER === "true" || isProduction ? 1 : false);
 
 app.disable("x-powered-by");
 
@@ -156,7 +158,9 @@ app.post("/api/chat", async (req, res) => {
       });
     }
 
-    let conversationId = sessionId;
+    let conversationId = sessionId
+      ? uuidField(sessionId, "sessionId")
+      : null;
     let previousInteractionId = null;
 
     if (conversationId) {
@@ -278,6 +282,10 @@ ${cleanMessage}
       answer,
     });
   } catch (error) {
+    if (error instanceof RequestValidationError) {
+      return res.status(400).json({ error: error.message });
+    }
+
     console.error("Chat error:", error);
 
     res.status(500).json({
@@ -316,13 +324,14 @@ app.get(
   "/api/conversations/:sessionId/messages",
   async (req, res) => {
     try {
+      const sessionId = uuidField(req.params.sessionId, "sessionId");
       const {
         data: conversation,
         error: conversationError,
       } = await supabase
         .from("conversations")
         .select("id")
-        .eq("id", req.params.sessionId)
+        .eq("id", sessionId)
         .eq("user_id", req.user.id)
         .maybeSingle();
 
@@ -351,6 +360,10 @@ app.get(
         messages: data,
       });
     } catch (error) {
+      if (error instanceof RequestValidationError) {
+        return res.status(400).json({ error: error.message });
+      }
+
       console.error("Message history error:", error);
 
       res.status(500).json({
@@ -365,10 +378,11 @@ app.delete(
   "/api/conversations/:sessionId",
   async (req, res) => {
     try {
+      const sessionId = uuidField(req.params.sessionId, "sessionId");
       const { data, error } = await supabase
         .from("conversations")
         .delete()
-        .eq("id", req.params.sessionId)
+        .eq("id", sessionId)
         .eq("user_id", req.user.id)
         .select("id")
         .maybeSingle();
@@ -387,6 +401,10 @@ app.delete(
         message: "Conversation deleted",
       });
     } catch (error) {
+      if (error instanceof RequestValidationError) {
+        return res.status(400).json({ error: error.message });
+      }
+
       console.error("Delete error:", error);
 
       res.status(500).json({

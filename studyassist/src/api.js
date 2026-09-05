@@ -16,7 +16,7 @@ async function readResponse(response) {
 
 export async function apiRequest(
   path,
-  { accessToken, method = "GET", body, headers = {} } = {},
+  { accessToken, method = "GET", body, headers = {}, signal } = {},
 ) {
   const requestHeaders = new Headers(headers);
 
@@ -35,6 +35,7 @@ export async function apiRequest(
     method,
     headers: requestHeaders,
     body: requestBody,
+    signal,
   });
 
   const data = await readResponse(response);

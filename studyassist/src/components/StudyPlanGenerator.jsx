@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { SUBJECTS } from "../constants/subjects";
-
-const API_URL = import.meta.env.VITE_API_URL;
+import { apiRequest } from "../api";
 
 function StudyPlanGenerator({ accessToken }) {
   const [subject, setSubject] = useState("Mathematics");
@@ -26,32 +25,16 @@ function StudyPlanGenerator({ accessToken }) {
       setMessage("");
       setGeneratedTasks([]);
 
-      const response = await fetch(
-        `${API_URL}/api/study-plans/generate`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            subject,
-            topics: topics.trim(),
-            examDate: new Date(
-              `${examDate}T23:59:00`
-            ).toISOString(),
-            availableDays: Number(availableDays),
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.error || "Could not generate the study plan"
-        );
-      }
+      const data = await apiRequest("/api/study-plans/generate", {
+        accessToken,
+        method: "POST",
+        body: {
+          subject,
+          topics: topics.trim(),
+          examDate: new Date(`${examDate}T23:59:00`).toISOString(),
+          availableDays: Number(availableDays),
+        },
+      });
 
       setGeneratedTasks(data.tasks);
       setMessage(

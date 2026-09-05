@@ -12,6 +12,7 @@ function Auth() {
 
   async function handleSubmit(event) {
     event.preventDefault();
+    if (loading) return;
 
     setLoading(true);
     setMessage("");
@@ -141,6 +142,7 @@ function Auth() {
           <>
             <button
               className="auth-switch"
+              disabled={loading}
               type="button"
               onClick={() => {
                 setAuthMode("forgot");
@@ -153,6 +155,7 @@ function Auth() {
 
             <button
               className="auth-switch"
+              disabled={loading}
               type="button"
               onClick={() => {
                 setAuthMode("signup");
@@ -168,6 +171,7 @@ function Auth() {
         {authMode !== "login" && (
           <button
             className="auth-switch"
+              disabled={loading}
             type="button"
             onClick={() => {
               setAuthMode("login");

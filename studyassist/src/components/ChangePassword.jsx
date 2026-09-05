@@ -10,6 +10,7 @@ function ChangePassword({ onBack }) {
 
   async function changePassword(event) {
     event.preventDefault();
+    if (loading) return;
     setError("");
     setMessage("");
 

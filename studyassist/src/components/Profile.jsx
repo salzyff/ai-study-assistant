@@ -2,13 +2,23 @@ import { useState } from "react";
 import { supabase } from "../supabase";
 import { SUBJECTS } from "../constants/subjects";
 
-const STUDY_MODES = ["ask", "explain", "quiz", "summarize", "practice"];
+const STUDY_MODES = ["ask", "explain", "summarize", "practice"];
 
 function Profile({ user, preferences, onPreferencesChange, onBack, onLogout, onChangePassword }) {
   const [displayName, setDisplayName] = useState(user.user_metadata?.display_name || "Student");
   const [savingProfile, setSavingProfile] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  async function handleLogout() {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    setError("");
+    try { await onLogout(); }
+    catch (err) { setError(err.message); }
+    finally { setLoggingOut(false); }
+  }
 
   function updatePreference(key, value) {
     onPreferencesChange({ ...preferences, [key]: value });
@@ -69,7 +79,7 @@ function Profile({ user, preferences, onPreferencesChange, onBack, onLogout, onC
           <button className="profile-secondary-button" type="button" onClick={onChangePassword}>
             Change password →
           </button>
-          <button className="logout-button" type="button" onClick={onLogout}>⇥ Log out</button>
+          <button className="logout-button" type="button" onClick={handleLogout} disabled={loggingOut}>⇥ {loggingOut ? "Logging out..." : "Log out"}</button>
         </div>
       </div>
       {message && <p className="profile-success">{message}</p>}

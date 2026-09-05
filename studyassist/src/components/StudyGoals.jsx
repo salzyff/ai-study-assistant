@@ -67,9 +67,10 @@ function StudyGoals({ accessToken }) {
       setLoading(true);
       setError("");
       await apiRequest(`/api/goals/${goalId}`, { accessToken, method: "DELETE" });
-      await loadGoals();
+      setGoals((current) => current.filter((goal) => goal.id !== goalId));
     } catch (requestError) {
       setError(requestError.message);
+      throw requestError;
     } finally {
       setLoading(false);
     }
@@ -88,14 +89,14 @@ function StudyGoals({ accessToken }) {
         <p><label htmlFor="goal-title">Goal title</label><br /><input id="goal-title" value={title} onChange={(event) => setTitle(event.target.value)} maxLength="160" required /></p>
         <p>
           <label htmlFor="goal-type">Track</label><br />
-          <select id="goal-type" value={targetType} onChange={(event) => setTargetType(event.target.value)}>
+          <select id="goal-type" value={targetType} onChange={(event) => { setTargetType(event.target.value); if (event.target.value === "quiz_score") setTargetValue(80); }}>
             <option value="study_minutes">Study minutes completed</option>
             <option value="sessions_completed">Study sessions completed</option>
             <option value="tasks_completed">Tasks completed</option>
             <option value="quiz_score">Best quiz percentage</option>
           </select>
         </p>
-        <p><label htmlFor="goal-target">Target value</label><br /><input id="goal-target" type="number" min="1" max="10000" value={targetValue} onChange={(event) => setTargetValue(event.target.value)} /></p>
+        <p><label htmlFor="goal-target">Target value</label><br /><input id="goal-target" type="number" min="1" max={targetType === "quiz_score" ? 100 : 10000} value={targetValue} onChange={(event) => setTargetValue(event.target.value)} /></p>
         <p><label htmlFor="goal-end">Deadline</label><br /><input id="goal-end" type="date" value={periodEnd} onChange={(event) => setPeriodEnd(event.target.value)} required /></p>
         <button type="submit" disabled={loading}>Create goal</button>
       </form>

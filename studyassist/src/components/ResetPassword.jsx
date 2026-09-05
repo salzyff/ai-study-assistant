@@ -9,6 +9,7 @@ function ResetPassword({ onComplete }) {
 
   async function updatePassword(event) {
     event.preventDefault();
+    if (loading) return;
     setError("");
 
     if (password !== confirmPassword) {

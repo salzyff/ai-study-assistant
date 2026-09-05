@@ -116,6 +116,7 @@ function QuestionBank({ accessToken }) {
   }
 
   async function submitQuiz() {
+    if (!quiz || loading || result) return;
     try {
       setLoading(true);
       setError("");
@@ -137,11 +138,13 @@ function QuestionBank({ accessToken }) {
   async function deleteQuestion(questionId) {
     try {
       setLoading(true);
+      setError("");
       await apiRequest(`/api/question-bank/${questionId}`, { accessToken, method: "DELETE" });
       setSelectedIds((ids) => ids.filter((id) => id !== questionId));
-      await loadBank();
+      setBank((current) => current.filter((question) => question.id !== questionId));
     } catch (requestError) {
       setError(requestError.message);
+      throw requestError;
     } finally {
       setLoading(false);
     }

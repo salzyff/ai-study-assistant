@@ -102,7 +102,7 @@ function Flashcards({ accessToken }) {
   async function reviewCard(rating) {
     const card = cards[currentCard];
 
-    if (!activeSet || !card) return;
+    if (loading || !activeSet || !card) return;
 
     try {
       setLoading(true);
@@ -125,6 +125,9 @@ function Flashcards({ accessToken }) {
         setShowAnswer(false);
       } else {
         setMessage("Flashcard review complete");
+        setActiveSet(null);
+        setCards([]);
+        setShowAnswer(false);
       }
     } catch (requestError) {
       setError(requestError.message);
@@ -149,10 +152,10 @@ function Flashcards({ accessToken }) {
       }
 
       setMessage("Flashcard set deleted");
-
-      await loadSources();
+      setSets((current) => current.filter((set) => set.id !== setId));
     } catch (requestError) {
       setError(requestError.message);
+      throw requestError;
     } finally {
       setLoading(false);
     }
@@ -353,6 +356,7 @@ function Flashcards({ accessToken }) {
                   <button
                     type="button"
                     className="flashcards-set-button"
+                    disabled={loading}
                     onClick={() => openSet(set.id)}
                   >
                     <span className="flashcards-set-icon">

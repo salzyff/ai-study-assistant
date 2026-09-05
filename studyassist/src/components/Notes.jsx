@@ -141,10 +141,14 @@ function Notes({ accessToken }) {
 
       setAnswer("");
       setMessage("Notes deleted");
-
-      await loadNotes();
+      setNotes((current) => current.filter((note) => note.id !== noteId));
+      if (selectedNoteId === noteId) {
+        setSelectedNoteId("");
+        setQuestion("");
+      }
     } catch (requestError) {
       setError(requestError.message);
+      throw requestError;
     } finally {
       setLoading(false);
     }
@@ -156,10 +160,6 @@ function Notes({ accessToken }) {
 
   return (
     <section className="tool-page">
-      <button type="button" className="back-button">
-        ← Back to Study Tools
-      </button>
-
       <div className="tool-page-header">
         <div>
           <h1>Notes & PDF Study</h1>
@@ -279,7 +279,8 @@ function Notes({ accessToken }) {
                   <button
                     type="button"
                     className="note-select-button"
-                    onClick={() => setSelectedNoteId(note.id)}
+                    disabled={loading}
+                    onClick={() => { setSelectedNoteId(note.id); setAnswer(""); setQuestion(""); }}
                   >
                     <span className="note-icon">📄</span>
 
@@ -316,10 +317,13 @@ function Notes({ accessToken }) {
 
               <select
                 id="selected-note"
+                disabled={loading}
                 value={selectedNoteId}
-                onChange={(event) =>
-                  setSelectedNoteId(event.target.value)
-                }
+                onChange={(event) => {
+                  setSelectedNoteId(event.target.value);
+                  setAnswer("");
+                  setQuestion("");
+                }}
               >
                 {notes.map((note) => (
                   <option value={note.id} key={note.id}>
