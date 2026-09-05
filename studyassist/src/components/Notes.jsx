@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown from "./MathMarkdown";
 import { apiRequest } from "../api";
 import { SUBJECTS } from "../constants/subjects";
 import DeleteConfirmation from "./DeleteConfirmation";

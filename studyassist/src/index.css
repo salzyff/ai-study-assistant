@@ -25,7 +25,9 @@
     color: #111827;
   }
   
-  
+  /* =========================================================
+     AUTH
+     ========================================================= */
   
   .auth-container {
     min-height: 100vh;
@@ -111,12 +113,12 @@
     cursor: not-allowed;
   }
 
-.google-auth-icon {
-  width: 18px;
-  height: 18px;
-  display: block;
-  flex-shrink: 0;
-}
+  .google-auth-mark {
+    color: #4285f4;
+    font-family: Arial, sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+  }
 
   .auth-divider {
     display: flex;
@@ -179,6 +181,11 @@
   }
 
   .password-visibility-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    min-height: 36px;
     position: absolute;
     top: 50%;
     right: 8px;
@@ -195,6 +202,17 @@
 
   .password-visibility-button:hover {
     background: #e0e7ff;
+  }
+
+  .password-visibility-button:focus-visible {
+    outline: 2px solid #4f46e5;
+    outline-offset: 2px;
+  }
+
+  .katex-display {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 6px 0;
   }
   
   .auth-submit {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown from "./components/MathMarkdown";
 import Auth from "./components/Auth";
 import TaskPlanner from "./components/TaskPlanner";
 import { supabase } from "./supabase";
