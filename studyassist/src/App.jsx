@@ -166,7 +166,7 @@ function App() {
 
       if (requestId !== navigationRequest.current) return;
 
-      setActiveTool(null);
+      setActiveTool("chat");
       setSessionId(conversation.id);
       setSubject(SUBJECTS.includes(conversation.subject) ? conversation.subject : "General");
       setMode(STUDY_MODES.includes(conversation.mode) ? conversation.mode : "ask");
@@ -247,7 +247,7 @@ function App() {
 
   function startNewChat() {
     navigationRequest.current += 1;
-    setActiveTool(null);
+    setActiveTool("chat");
     setHistoryLoading(false);
     setSessionId(null);
     setMessages([]);
@@ -365,6 +365,15 @@ function App() {
         >
           <span>＋</span>
           New Chat
+        </button>
+
+        <button
+          className="back-button"
+          type="button"
+          onClick={() => openTool(null)}
+          aria-current={activeTool === null ? "page" : undefined}
+        >
+          Home
         </button>
 
         <div className="history-header">
@@ -674,8 +683,8 @@ function App() {
         <header className="topbar">
 
           <div>
-            <h1>Study AI</h1>
-            <p>Learn smarter. Study better. 🚀</p>
+            <h1>{activeTool === "chat" ? "Study Chat" : "Welcome to Study AI"}</h1>
+            <p>{activeTool === "chat" ? "Ask a question and explore it together." : "Choose a study tool or start a new chat. 🚀"}</p>
           </div>
 
           <div className="status">
@@ -686,6 +695,8 @@ function App() {
         </header>
 
         {/* CONTROLS */}
+        {activeTool === "chat" && (
+        <>
         <section className="study-controls">
 
           <div className="control-group">
@@ -899,6 +910,18 @@ function App() {
         </section>
 
         {/* TOOLS */}
+        </>
+        )}
+        {activeTool === null && (
+        <>
+        <button className="new-chat-button" type="button" onClick={startNewChat} disabled={loading}>
+          ＋ Start a new chat
+        </button>
+        {(sessionId || messages.length > 0) && (
+          <button className="back-button" type="button" onClick={() => openTool("chat")}>
+            Continue current chat
+          </button>
+        )}
         <section className="study-tools">
 
           <div className="tool-heading">
@@ -1063,7 +1086,8 @@ function App() {
 </div>
 </div>
         </section>
-      
+        </>
+        )}
   </>
 )}
 
