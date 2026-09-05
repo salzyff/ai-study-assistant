@@ -10,6 +10,7 @@ import {
   stringField,
   uuidField,
 } from "../utils/validation.js";
+import { paginationResult, parsePagination } from "../utils/pagination.js";
 
 const router = express.Router();
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -71,13 +72,13 @@ function cleanGeneratedQuestion(question) {
 
 router.get("/", async (req, res) => {
   try {
-    const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 100);
+    const pagination = parsePagination(req.query, { defaultLimit: 50 });
     let query = supabase
       .from("question_bank")
-      .select("id, subject, topic, exam_type, exam_year, difficulty, question, options, explanation, marking_points, source_type, source_label, created_at")
+      .select("id, subject, topic, exam_type, exam_year, difficulty, question, options, explanation, marking_points, source_type, source_label, created_at", { count: "exact" })
       .eq("user_id", req.user.id)
       .order("created_at", { ascending: false })
-      .limit(limit);
+      .range(pagination.from, pagination.to);
 
     if (req.query.subject) query = query.eq("subject", stringField(req.query.subject, "subject", { max: 80 }));
     if (req.query.topic) query = query.ilike("topic", `%${stringField(req.query.topic, "topic", { max: 200 })}%`);
@@ -85,9 +86,9 @@ router.get("/", async (req, res) => {
     if (req.query.examYear) query = query.eq("exam_year", yearField(req.query.examYear));
     if (req.query.difficulty) query = query.eq("difficulty", enumField(req.query.difficulty, "difficulty", difficulties));
 
-    const { data, error } = await query;
+    const { data, error, count } = await query;
     if (error) throw error;
-    res.json({ questions: data });
+    res.json({ questions: data, pagination: paginationResult({ ...pagination, count, returned: data.length }) });
   } catch (error) {
     if (error instanceof RequestValidationError) return res.status(400).json({ error: error.message });
     console.error("Load question bank error:", error);

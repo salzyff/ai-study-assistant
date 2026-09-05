@@ -4,7 +4,7 @@ import { SUBJECTS } from "../constants/subjects";
 
 const STUDY_MODES = ["ask", "explain", "summarize", "practice"];
 
-function Profile({ user, preferences, onPreferencesChange, onBack, onLogout, onChangePassword }) {
+function Profile({ user, preferences, onPreferencesChange, onBack, onLogout, onChangePassword, isAdmin, onOpenAdmin }) {
   const [displayName, setDisplayName] = useState(user.user_metadata?.display_name || "Student");
   const [savingProfile, setSavingProfile] = useState(false);
   const [message, setMessage] = useState("");
@@ -81,6 +81,16 @@ function Profile({ user, preferences, onPreferencesChange, onBack, onLogout, onC
           </button>
           <button className="logout-button" type="button" onClick={handleLogout} disabled={loggingOut}>⇥ {loggingOut ? "Logging out..." : "Log out"}</button>
         </div>
+
+        {isAdmin && (
+          <div className="profile-section">
+            <h2>Administration</h2>
+            <p className="profile-help">Monitor system totals and manage background jobs.</p>
+            <button className="profile-secondary-button" type="button" onClick={onOpenAdmin}>
+              Open admin dashboard →
+            </button>
+          </div>
+        )}
       </div>
       {message && <p className="profile-success">{message}</p>}
       {error && <p className="auth-error">Error: {error}</p>}

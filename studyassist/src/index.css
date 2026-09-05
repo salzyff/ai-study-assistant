@@ -3876,3 +3876,326 @@
 .task-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; min-width: 0; }
 .task-study-button { background: #f0ebff; color: #5945e8; }
 @media (max-width: 640px) { .task-item { flex-wrap: wrap; } .task-actions { width: 100%; justify-content: flex-start; } }
+
+/* Backend operations made visible in the existing interface */
+.history-load-more {
+  margin: 8px;
+  padding: 9px 12px;
+  border: 1px solid #e0daf0;
+  border-radius: 9px;
+  background: #f8f7ff;
+  color: #5945e8;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.history-load-more:disabled {
+  opacity: .6;
+  cursor: wait;
+}
+
+.status-dot-working {
+  background: #f59e0b !important;
+  animation: status-pulse 1s infinite alternate;
+}
+
+@keyframes status-pulse {
+  from { opacity: .45; transform: scale(.85); }
+  to { opacity: 1; transform: scale(1.15); }
+}
+
+.upload-security-note {
+  display: block;
+  margin-top: 7px;
+  color: #15803d;
+  font-size: 12px;
+}
+
+.operations-page {
+  color: #29283b;
+}
+
+.operations-toolbar,
+.admin-section-heading,
+.operations-item-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.operations-toolbar {
+  margin-bottom: 22px;
+}
+
+.operations-toolbar h2,
+.admin-section-heading h3 {
+  margin: 0 0 6px;
+}
+
+.operations-toolbar p,
+.admin-section-heading p {
+  margin: 0;
+  color: #88849d;
+  font-size: 13px;
+}
+
+.operations-actions {
+  display: flex;
+  gap: 9px;
+}
+
+.operations-toolbar button,
+.operations-actions button,
+.pagination-controls button,
+.admin-table button {
+  padding: 10px 14px;
+  border: 1px solid #d9d6ef;
+  border-radius: 9px;
+  background: #fff;
+  color: #554dc7;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.operations-toolbar .operations-primary {
+  border-color: #5945e8;
+  background: #5945e8;
+  color: #fff;
+}
+
+.operations-toolbar button:disabled,
+.pagination-controls button:disabled,
+.admin-table button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.operations-success,
+.operations-error {
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  border-radius: 11px;
+  font-size: 13px;
+}
+
+.operations-success {
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.operations-error {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.operations-empty {
+  padding: 40px 20px;
+  border: 1px dashed #ddd9f2;
+  border-radius: 14px;
+  background: #faf9ff;
+  color: #6b6880;
+  text-align: center;
+}
+
+.operations-empty > span {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 30px;
+}
+
+.operations-empty h3,
+.operations-empty p {
+  margin: 5px 0;
+}
+
+.operations-list {
+  display: grid;
+  gap: 12px;
+}
+
+.operations-item {
+  padding: 18px;
+  border: 1px solid #e9e7f5;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.operations-item-heading > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.operations-item-heading small {
+  color: #8b899b;
+}
+
+.job-status {
+  display: inline-flex;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  color: #4b5563;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
+.job-status-completed { background: #dcfce7; color: #15803d; }
+.job-status-queued { background: #e0e7ff; color: #4338ca; }
+.job-status-processing { background: #fef3c7; color: #a16207; }
+.job-status-failed { background: #fee2e2; color: #b91c1c; }
+
+.report-results {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.report-results > div {
+  padding: 13px;
+  border-radius: 11px;
+  background: #f8f7ff;
+}
+
+.report-results strong,
+.report-results span {
+  display: block;
+}
+
+.report-results strong {
+  color: #554dc7;
+  font-size: 20px;
+}
+
+.report-results span {
+  margin-top: 4px;
+  color: #8b899b;
+  font-size: 11px;
+}
+
+.operations-error-text {
+  color: #b91c1c;
+  font-size: 13px;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.pagination-controls span {
+  color: #77738a;
+  font-size: 12px;
+}
+
+.admin-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.admin-stat-card {
+  padding: 17px;
+  border: 1px solid #e9e7f5;
+  border-radius: 14px;
+  background: #faf9ff;
+}
+
+.admin-stat-card > span,
+.admin-stat-card > strong,
+.admin-stat-card > small {
+  display: block;
+}
+
+.admin-stat-card > strong {
+  margin: 12px 0 3px;
+  color: #342f70;
+  font-size: 25px;
+}
+
+.admin-stat-card > small {
+  color: #77738a;
+}
+
+.admin-section-heading {
+  margin: 8px 0 14px;
+}
+
+.admin-log-heading {
+  margin-top: 32px;
+}
+
+.admin-section-heading > small {
+  color: #8b899b;
+}
+
+.admin-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #e9e7f5;
+  border-radius: 13px;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 13px;
+  border-bottom: 1px solid #eeecf5;
+  text-align: left;
+}
+
+.admin-table th {
+  background: #f8f7ff;
+  color: #5f5a72;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.admin-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.log-level {
+  display: inline-flex;
+  padding: 4px 8px;
+  border-radius: 7px;
+  background: #eef2ff;
+  color: #4338ca;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.log-level-warn { background: #fef3c7; color: #a16207; }
+.log-level-error { background: #fee2e2; color: #b91c1c; }
+
+@media (max-width: 900px) {
+  .admin-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .report-results { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 650px) {
+  .operations-toolbar,
+  .admin-section-heading { align-items: flex-start; flex-direction: column; }
+  .operations-actions { width: 100%; flex-wrap: wrap; }
+  .operations-toolbar button { width: 100%; }
+  .admin-stat-grid,
+  .report-results { grid-template-columns: 1fr; }
+  .pagination-controls { flex-wrap: wrap; }
+}

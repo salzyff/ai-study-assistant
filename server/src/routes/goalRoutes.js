@@ -9,6 +9,7 @@ import {
   stringField,
   uuidField,
 } from "../utils/validation.js";
+import { paginationResult, parsePagination } from "../utils/pagination.js";
 
 const router = express.Router();
 const targetTypes = ["study_minutes", "quiz_score", "tasks_completed", "sessions_completed"];
@@ -53,14 +54,18 @@ async function refreshGoals(userId, goals) {
 
 router.get("/", async (req, res) => {
   try {
-    const { data, error } = await supabase
+    const pagination = parsePagination(req.query, { defaultLimit: 30 });
+    const { data, error, count } = await supabase
       .from("study_goals")
-      .select("id, subject, title, target_type, target_value, current_value, period_start, period_end, completed, created_at, updated_at")
+      .select("id, subject, title, target_type, target_value, current_value, period_start, period_end, completed, created_at, updated_at", { count: "exact" })
       .eq("user_id", req.user.id)
-      .order("period_end", { ascending: true });
+      .order("period_end", { ascending: true })
+      .range(pagination.from, pagination.to);
     if (error) throw error;
-    res.json({ goals: await refreshGoals(req.user.id, data || []) });
+    const goals = await refreshGoals(req.user.id, data || []);
+    res.json({ goals, pagination: paginationResult({ ...pagination, count, returned: goals.length }) });
   } catch (error) {
+    if (error instanceof RequestValidationError) return res.status(400).json({ error: error.message });
     console.error("Load goals error:", error);
     res.status(500).json({ error: "Could not load study goals" });
   }

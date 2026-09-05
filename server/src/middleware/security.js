@@ -21,6 +21,7 @@ export const corsOptions = {
 
   methods: ["GET", "POST", "PATCH", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
+  exposedHeaders: ["X-Request-Id", "X-AI-Daily-Limit", "X-AI-Daily-Remaining"],
   maxAge: 86400,
 };
 

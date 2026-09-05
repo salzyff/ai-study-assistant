@@ -58,7 +58,7 @@ function Notes({ accessToken }) {
         body: formData,
       });
 
-      setMessage(data.note.title + " was uploaded");
+      setMessage(data.note.title + " passed the security checks and was uploaded");
 
       form.reset();
 
@@ -186,6 +186,7 @@ function Notes({ accessToken }) {
             <div>
               <h3>Upload your notes</h3>
               <p>Supported formats: PDF, TXT, and Markdown</p>
+              <small className="upload-security-note">🛡️ File type and content are checked before saving.</small>
             </div>
 
             <input

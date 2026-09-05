@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "test": "node --test"
+    "test": "node --test",
+    "db:verify": "node scripts/verify-migrations.mjs",
+    "db:backup": "node scripts/backup-database.mjs"
   },
   "keywords": [],
   "author": "",

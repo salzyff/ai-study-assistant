@@ -6,6 +6,8 @@ import { GoogleGenAI } from "@google/genai";
 import { supabase } from "../supabase.js";
 import { dailyAiLimit, recordAiUsage } from "../middleware/aiUsage.js";
 import { stringField, uuidField, validateBody } from "../utils/validation.js";
+import { inspectStudyUpload } from "../utils/fileSecurity.js";
+import { paginationResult, parsePagination } from "../utils/pagination.js";
 
 const router = express.Router();
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -64,15 +66,21 @@ async function getOwnedNote(noteId, userId) {
 
 router.get("/", async (req, res) => {
   try {
-    const { data, error } = await supabase
+    const pagination = parsePagination(req.query, { defaultLimit: 30 });
+    const { data, error, count } = await supabase
       .from("study_notes")
-      .select("id, title, subject, original_filename, mime_type, char_count, created_at")
+      .select("id, title, subject, original_filename, mime_type, char_count, created_at", { count: "exact" })
       .eq("user_id", req.user.id)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .range(pagination.from, pagination.to);
 
     if (error) throw error;
-    res.json({ notes: data });
+    res.json({
+      notes: data,
+      pagination: paginationResult({ ...pagination, count, returned: data.length }),
+    });
   } catch (error) {
+    if (error.statusCode === 400) return res.status(400).json({ error: error.message });
     console.error("Load notes error:", error);
     res.status(500).json({ error: "Could not load notes" });
   }
@@ -82,6 +90,11 @@ router.post("/", upload.single("file"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "A PDF, TXT, or Markdown file is required" });
+    }
+
+    const inspection = inspectStudyUpload(req.file);
+    if (!inspection.safe) {
+      return res.status(415).json({ error: inspection.reason });
     }
 
     const subject = stringField(req.body.subject || "General", "subject", { max: 80 });

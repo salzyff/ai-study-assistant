@@ -10,6 +10,7 @@ import {
   stringField,
   uuidField,
 } from "../utils/validation.js";
+import { paginationResult, parsePagination } from "../utils/pagination.js";
 
 const router = express.Router();
 
@@ -57,15 +58,17 @@ const studySessionSchema = {
 // Get only the logged-in student's tasks
 router.get("/", async (req, res) => {
   try {
-    const { data, error } = await supabase
+    const pagination = parsePagination(req.query, { defaultLimit: 50 });
+    const { data, error, count } = await supabase
       .from("tasks")
-      .select("*")
+      .select("*", { count: "exact" })
       .eq("user_id", req.user.id)
       .order("completed", { ascending: true })
       .order("due_date", {
         ascending: true,
         nullsFirst: false,
-      });
+      })
+      .range(pagination.from, pagination.to);
 
     if (error) {
       throw error;
@@ -73,8 +76,12 @@ router.get("/", async (req, res) => {
 
     res.json({
       tasks: data,
+      pagination: paginationResult({ ...pagination, count, returned: data.length }),
     });
   } catch (error) {
+    if (error instanceof RequestValidationError) {
+      return res.status(400).json({ error: error.message });
+    }
     console.error("Load tasks error:", error);
 
     res.status(500).json({

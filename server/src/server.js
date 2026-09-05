@@ -1,4 +1,5 @@
 import express from "express";
+import { randomUUID } from "node:crypto";
 import cors from "cors";
 import dotenv from "dotenv";
 import { GoogleGenAI } from "@google/genai";
@@ -14,6 +15,8 @@ import dashboardRoutes from "./routes/dashboardRoutes.js";
 import learningRoutes from "./routes/learningRoutes.js";
 import goalRoutes from "./routes/goalRoutes.js";
 import questionBankRoutes from "./routes/questionBankRoutes.js";
+import reportRoutes from "./routes/reportRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 import helmet from "helmet";
 import {
   corsOptions,
@@ -26,6 +29,9 @@ import {
   recordAiUsage,
 } from "./middleware/aiUsage.js";
 import { RequestValidationError, uuidField } from "./utils/validation.js";
+import { paginationResult, parsePagination } from "./utils/pagination.js";
+import { logger, requestLogger } from "./utils/logger.js";
+import { startBackgroundWorker } from "./services/backgroundJobs.js";
 
 dotenv.config();
 
@@ -43,6 +49,13 @@ const isProduction = process.env.NODE_ENV === "production";
 app.set("trust proxy", process.env.RENDER === "true" || isProduction ? 1 : false);
 
 app.disable("x-powered-by");
+
+app.use((req, res, next) => {
+  req.id = req.headers["x-request-id"]?.toString().slice(0, 100) || randomUUID();
+  res.setHeader("X-Request-Id", req.id);
+  next();
+});
+app.use(requestLogger);
 
 app.use(
   helmet({
@@ -294,14 +307,133 @@ ${cleanMessage}
   }
 });
 
+function sendStreamEvent(res, event, data) {
+  if (!res.destroyed && !res.writableEnded) {
+    res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+  }
+}
+
+// Stream a chat answer as Server-Sent Events while preserving chat history.
+app.post("/api/chat/stream", async (req, res) => {
+  let conversationId = null;
+  let createdConversation = false;
+
+  try {
+    const { message, subject = "General", mode = "ask", sessionId } = req.body;
+    if (typeof message !== "string" || !message.trim()) {
+      return res.status(400).json({ error: "A message is required" });
+    }
+    const cleanMessage = message.trim();
+    if (cleanMessage.length > 6000) return res.status(400).json({ error: "The message must be 6000 characters or fewer" });
+    if (typeof subject !== "string" || !subject.trim() || subject.length > 80) {
+      return res.status(400).json({ error: "The subject must be between 1 and 80 characters" });
+    }
+    if (!studyModes[mode]) return res.status(400).json({ error: "Invalid study mode" });
+
+    conversationId = sessionId ? uuidField(sessionId, "sessionId") : null;
+    let history = [];
+
+    if (conversationId) {
+      const { data: conversation, error: conversationError } = await supabase
+        .from("conversations")
+        .select("id")
+        .eq("id", conversationId)
+        .eq("user_id", req.user.id)
+        .maybeSingle();
+      if (conversationError) throw conversationError;
+      if (!conversation) return res.status(404).json({ error: "Conversation not found" });
+
+      const { data: recentMessages, error: historyError } = await supabase
+        .from("messages")
+        .select("role, content, created_at")
+        .eq("conversation_id", conversationId)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (historyError) throw historyError;
+      history = (recentMessages || []).reverse();
+    } else {
+      const { data: conversation, error: conversationError } = await supabase
+        .from("conversations")
+        .insert({ user_id: req.user.id, subject: subject.trim(), mode })
+        .select("id")
+        .single();
+      if (conversationError) throw conversationError;
+      conversationId = conversation.id;
+      createdConversation = true;
+    }
+
+    res.status(200);
+    res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+    res.setHeader("Cache-Control", "no-cache, no-transform");
+    res.setHeader("Connection", "keep-alive");
+    res.flushHeaders();
+    sendStreamEvent(res, "meta", { sessionId: conversationId, subject: subject.trim(), mode });
+
+    const historyText = history
+      .map((item) => `${item.role === "student" ? "Student" : "Assistant"}: ${String(item.content).slice(0, 2500)}`)
+      .join("\n\n");
+    const prompt = `You are an AI study assistant for secondary-school students.
+Subject: ${subject.trim()}
+Use simple language, teach for understanding, show formulas and working for calculations, and stay focused on the subject.
+Study mode: ${mode}
+Mode instructions: ${studyModes[mode]}
+${historyText ? `Recent conversation:\n${historyText}\n` : ""}
+Student: ${cleanMessage}`;
+
+    const stream = await ai.models.generateContentStream({
+      model: "gemini-3.1-flash-lite",
+      contents: prompt,
+    });
+
+    let answer = "";
+    for await (const chunk of stream) {
+      const delta = chunk.text || "";
+      if (!delta) continue;
+      answer += delta;
+      sendStreamEvent(res, "delta", { text: delta });
+    }
+    if (!answer.trim()) throw new Error("The AI returned an empty response");
+
+    const { error: messagesError } = await supabase.from("messages").insert([
+      { conversation_id: conversationId, role: "student", content: cleanMessage },
+      { conversation_id: conversationId, role: "assistant", content: answer },
+    ]);
+    if (messagesError) throw messagesError;
+
+    const { error: updateError } = await supabase
+      .from("conversations")
+      .update({ gemini_interaction_id: null, subject: subject.trim(), mode, updated_at: new Date().toISOString() })
+      .eq("id", conversationId)
+      .eq("user_id", req.user.id);
+    if (updateError) throw updateError;
+
+    await recordAiUsage(req.user.id, `chat_${mode}`);
+    sendStreamEvent(res, "done", { sessionId: conversationId });
+    res.end();
+  } catch (error) {
+    if (createdConversation && conversationId) {
+      await supabase.from("conversations").delete().eq("id", conversationId).eq("user_id", req.user.id);
+    }
+    if (!res.headersSent) {
+      const status = error instanceof RequestValidationError ? 400 : 500;
+      return res.status(status).json({ error: status === 400 ? error.message : "The AI could not generate or save the answer" });
+    }
+    logger.error("chat_stream_failed", { requestId: req.id, userId: req.user.id, error });
+    sendStreamEvent(res, "error", { error: "The AI response was interrupted. Please try again." });
+    res.end();
+  }
+});
+
 // Get the logged-in student's conversations
 app.get("/api/conversations", async (req, res) => {
   try {
-    const { data, error } = await supabase
+    const pagination = parsePagination(req.query, { defaultLimit: 30 });
+    const { data, error, count } = await supabase
       .from("conversations")
-      .select("id, subject, mode, created_at, updated_at")
+      .select("id, subject, mode, created_at, updated_at", { count: "exact" })
       .eq("user_id", req.user.id)
-      .order("updated_at", { ascending: false });
+      .order("updated_at", { ascending: false })
+      .range(pagination.from, pagination.to);
 
     if (error) {
       throw error;
@@ -309,8 +441,10 @@ app.get("/api/conversations", async (req, res) => {
 
     res.json({
       conversations: data,
+      pagination: paginationResult({ ...pagination, count, returned: data.length }),
     });
   } catch (error) {
+    if (error instanceof RequestValidationError) return res.status(400).json({ error: error.message });
     console.error("Conversation list error:", error);
 
     res.status(500).json({
@@ -425,6 +559,8 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/learning", learningRoutes);
 app.use("/api/goals", goalRoutes);
 app.use("/api/question-bank", questionBankRoutes);
+app.use("/api/reports", reportRoutes);
+app.use("/api/admin", adminRoutes);
 
 app.get("/api/ai-usage", async (req, res) => {
   try {
@@ -465,13 +601,18 @@ app.use((error, req, res, next) => {
     });
   }
 
-  console.error("Unhandled server error:", error);
+  logger.error("unhandled_server_error", { requestId: req.id, error });
 
   res.status(500).json({
     error: "An unexpected server error occurred",
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== "test") {
+  app.listen(PORT, () => {
+    logger.info("server_started", { port: Number(PORT), environment: process.env.NODE_ENV || "development" });
+    startBackgroundWorker();
+  });
+}
+
+export { app };

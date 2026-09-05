@@ -10,6 +10,7 @@ Run both migrations in order in the Supabase SQL editor before using the new rou
 
 1. `supabase/migrations/001_learning_features.sql`
 2. `supabase/migrations/002_adaptive_learning.sql`
+3. `supabase/migrations/003_production_backend.sql`
 
 Then copy `.env.example` to `.env`, fill in the existing secrets, and run:
 
@@ -17,6 +18,71 @@ Then copy `.env.example` to `.env`, fill in the existing secrets, and run:
 npm install
 npm run dev
 ```
+
+Migration and backup commands:
+
+```bash
+npm run db:verify
+supabase db push
+npm run db:backup
+```
+
+`db:backup` requires PostgreSQL's `pg_dump` command and a `SUPABASE_DB_URL`
+environment variable. Backups are stored in `server/backups/`, which Git ignores.
+
+## Production environment variables
+
+- `ADMIN_EMAILS`: comma-separated administrator email addresses.
+- `ENABLE_BACKGROUND_WORKER=true`: processes queued weekly reports on Render.
+- `JOB_POLL_INTERVAL_MS`: optional worker interval; defaults to 30 seconds.
+- `SUPABASE_DB_URL`: direct database URL used only by the local backup command.
+
+Never place the Supabase secret key or database URL in the React/Vite environment.
+
+## Streaming chat
+
+### `POST /api/chat/stream`
+
+Accepts the same JSON body as `/api/chat` and returns Server-Sent Events:
+
+- `meta`: conversation ID, subject, and mode
+- `delta`: the next piece of the answer
+- `done`: the saved response is complete
+- `error`: generation or saving failed
+
+The React chat already uses this route, so answers appear as they are generated.
+
+## Pagination
+
+List routes support `limit` and `offset` query parameters and return a
+`pagination` object containing `total`, `hasMore`, and `nextOffset`. This is
+available for conversations, tasks, notes, flashcard sets, quiz history,
+question-bank entries, goals, reports, and admin jobs.
+
+## Background weekly reports
+
+- `POST /api/reports/weekly` queues a seven-day progress report.
+- `GET /api/reports?limit=20&offset=0` returns completed and pending reports.
+
+The database claim function prevents two Render instances from processing the
+same report. Interrupted jobs are automatically reclaimable after 15 minutes.
+
+## Administrator API
+
+Set `ADMIN_EMAILS` on Render, then sign in with one of those accounts.
+
+- `GET /api/admin/status` tells the frontend whether the signed-in account is an administrator.
+- `GET /api/admin/overview` returns user, conversation, task, AI-usage, and failed-job totals.
+- `GET /api/admin/logs` returns a protected rolling view of recent structured server events.
+- `GET /api/admin/jobs` lists background jobs with pagination.
+- `POST /api/admin/jobs/:jobId/retry` retries a failed job.
+- `POST /api/admin/jobs/run-once` asks the worker to process one queued job immediately.
+
+## Upload security
+
+Uploads are restricted by size, MIME type, matching filename extension, PDF
+signature, and binary-content checks. Encrypted PDFs and PDFs containing scripts,
+embedded files, launch actions, or automatic actions are rejected.
 
 ## AI usage
 

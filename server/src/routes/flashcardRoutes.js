@@ -3,6 +3,7 @@ import express from "express";
 import { GoogleGenAI } from "@google/genai";
 import { supabase } from "../supabase.js";
 import { dailyAiLimit, recordAiUsage } from "../middleware/aiUsage.js";
+import { paginationResult, parsePagination } from "../utils/pagination.js";
 import { nextFlashcardSchedule } from "../utils/learning.js";
 import {
   RequestValidationError,
@@ -130,15 +131,18 @@ router.post("/generate", dailyAiLimit, generateValidator, async (req, res) => {
 
 router.get("/sets", async (req, res) => {
   try {
-    const { data, error } = await supabase
+    const pagination = parsePagination(req.query, { defaultLimit: 30 });
+    const { data, error, count } = await supabase
       .from("flashcard_sets")
-      .select("id, subject, topic, source_note_id, created_at, flashcards(count)")
+      .select("id, subject, topic, source_note_id, created_at, flashcards(count)", { count: "exact" })
       .eq("user_id", req.user.id)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .range(pagination.from, pagination.to);
 
     if (error) throw error;
-    res.json({ sets: data });
+    res.json({ sets: data, pagination: paginationResult({ ...pagination, count, returned: data.length }) });
   } catch (error) {
+    if (error instanceof RequestValidationError) return res.status(400).json({ error: error.message });
     console.error("Load flashcard sets error:", error);
     res.status(500).json({ error: "Could not load flashcard sets" });
   }

@@ -10,6 +10,7 @@ import {
   stringField,
   uuidField,
 } from "../utils/validation.js";
+import { paginationResult, parsePagination } from "../utils/pagination.js";
 import { difficultyFromMastery, nextAdaptiveDifficulty } from "../utils/learning.js";
 
 const router = express.Router();
@@ -239,16 +240,17 @@ router.post("/generate", async (req, res) => {
 
 router.get("/history", async (req, res) => {
   try {
-    const limit = Math.min(Math.max(Number(req.query.limit) || 30, 1), 100);
-    const { data, error } = await supabase
+    const pagination = parsePagination(req.query, { defaultLimit: 30 });
+    const { data, error, count } = await supabase
       .from("quiz_attempts")
-      .select("id, score, total, mode, duration_seconds, created_at, quizzes(id, subject, topic, difficulty, mode, duration_minutes)")
+      .select("id, score, total, mode, duration_seconds, created_at, quizzes(id, subject, topic, difficulty, mode, duration_minutes)", { count: "exact" })
       .eq("user_id", req.user.id)
       .order("created_at", { ascending: false })
-      .limit(limit);
+      .range(pagination.from, pagination.to);
     if (error) throw error;
-    res.json({ attempts: data });
+    res.json({ attempts: data, pagination: paginationResult({ ...pagination, count, returned: data.length }) });
   } catch (error) {
+    if (error instanceof RequestValidationError) return res.status(400).json({ error: error.message });
     console.error("Quiz history error:", error);
     res.status(500).json({ error: "Could not load quiz history" });
   }

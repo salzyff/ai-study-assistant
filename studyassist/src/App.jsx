@@ -14,8 +14,10 @@ import DeleteConfirmation from "./components/DeleteConfirmation";
 import ResetPassword from "./components/ResetPassword";
 import Profile from "./components/Profile";
 import ChangePassword from "./components/ChangePassword";
+import WeeklyReports from "./components/WeeklyReports";
+import AdminDashboard from "./components/AdminDashboard";
 import { SUBJECTS } from "./constants/subjects";
-import { apiRequest } from "./api";
+import { apiRequest, streamApiRequest } from "./api";
 
 const STUDY_MODES = ["ask", "explain", "summarize", "practice"];
 
@@ -53,10 +55,13 @@ function App() {
 
   const [messages, setMessages] = useState([]);
   const [conversations, setConversations] = useState([]);
+  const [conversationPagination, setConversationPagination] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [error, setError] = useState("");
+  const [streamStatus, setStreamStatus] = useState("idle");
   const navigationRequest = useRef(0);
 
   const accessToken = session?.access_token;
@@ -93,13 +98,16 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const loadConversations = useCallback(async () => {
+  const loadConversations = useCallback(async ({ offset = 0, append = false } = {}) => {
     try {
       setError("");
 
-      const data = await apiRequest("/api/conversations", { accessToken });
+      const data = await apiRequest(`/api/conversations?limit=20&offset=${offset}`, { accessToken });
 
-      setConversations(data.conversations || []);
+      setConversations((current) => append
+        ? [...current, ...(data.conversations || [])]
+        : (data.conversations || []));
+      setConversationPagination(data.pagination || null);
     } catch (requestError) {
       setError(requestError.message);
     }
@@ -110,6 +118,39 @@ function App() {
     const timer = window.setTimeout(loadConversations, 0);
     return () => window.clearTimeout(timer);
   }, [accessToken, loadConversations]);
+
+  useEffect(() => {
+    if (!accessToken) return undefined;
+
+    let cancelled = false;
+    async function checkAdminAccess() {
+      try {
+        const data = await apiRequest("/api/admin/status", { accessToken });
+        if (!cancelled) setIsAdmin(Boolean(data.isAdmin));
+      } catch {
+        if (!cancelled) setIsAdmin(false);
+      }
+    }
+
+    const timer = window.setTimeout(checkAdminAccess, 0);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [accessToken]);
+
+  async function loadMoreConversations() {
+    if (!conversationPagination?.hasMore || historyLoading) return;
+    try {
+      setHistoryLoading(true);
+      await loadConversations({
+        offset: conversationPagination.nextOffset,
+        append: true,
+      });
+    } finally {
+      setHistoryLoading(false);
+    }
+  }
 
   async function openConversation(conversation) {
     const requestId = ++navigationRequest.current;
@@ -149,43 +190,57 @@ function App() {
 
     setError("");
     setLoading(true);
+    setStreamStatus("connecting");
     setMessage("");
 
+    const assistantMessageId = `stream-${Date.now()}`;
     setMessages((currentMessages) => [
       ...currentMessages,
       {
         role: "student",
         content: cleanMessage,
       },
+      {
+        id: assistantMessageId,
+        role: "assistant",
+        content: "",
+      },
     ]);
 
     try {
-      const data = await apiRequest("/api/chat", {
+      await streamApiRequest("/api/chat/stream", {
         accessToken,
-        method: "POST",
         body: {
           message: cleanMessage,
           subject,
           mode,
           sessionId,
         },
-      });
-
-      setSessionId(data.sessionId);
-
-      setMessages((currentMessages) => [
-        ...currentMessages,
-        {
-          role: "assistant",
-          content: data.answer,
+        onEvent(eventName, data) {
+          if (eventName === "meta") {
+            setSessionId(data.sessionId);
+            setStreamStatus("streaming");
+          }
+          if (eventName === "delta") {
+            setMessages((currentMessages) => currentMessages.map((item) => (
+              item.id === assistantMessageId
+                ? { ...item, content: item.content + data.text }
+                : item
+            )));
+          }
+          if (eventName === "done") setStreamStatus("saving");
         },
-      ]);
+      });
 
       await loadConversations();
     } catch (requestError) {
+      setMessages((currentMessages) => currentMessages.filter(
+        (item) => item.id !== assistantMessageId || item.content,
+      ));
       setError(requestError.message);
     } finally {
       setLoading(false);
+      setStreamStatus("idle");
     }
   }
 
@@ -199,6 +254,7 @@ function App() {
     setSubject(preferences.defaultSubject);
     setMode(preferences.defaultMode);
     setError("");
+    setStreamStatus("idle");
   }
 
   function openTool(tool) {
@@ -249,6 +305,7 @@ function App() {
     setMessages([]);
     setSessionId(null);
     setActiveTool(null);
+    setIsAdmin(false);
   }
 
   function finishPasswordRecovery() {
@@ -347,6 +404,17 @@ function App() {
             </div>
           ))}
 
+          {conversationPagination?.hasMore && (
+            <button
+              className="history-load-more"
+              type="button"
+              onClick={loadMoreConversations}
+              disabled={historyLoading}
+            >
+              {historyLoading ? "Loading…" : "Load older chats"}
+            </button>
+          )}
+
         </div>
 
         <div className="sidebar-bottom">
@@ -386,7 +454,21 @@ function App() {
           onBack={() => openTool(null)}
           onLogout={logOut}
           onChangePassword={() => openTool("change-password")}
+          isAdmin={isAdmin}
+          onOpenAdmin={() => openTool("admin")}
         />
+      ) : activeTool === "admin" ? (
+        <section className="tool-page">
+          <button className="back-button" type="button" onClick={() => openTool("profile")}>← Back to Profile</button>
+          <div className="tool-page-header"><div><h1>Admin Dashboard ⚙️</h1><p>Monitor the backend and manage queued work.</p></div></div>
+          <div className="tool-page-content"><AdminDashboard accessToken={accessToken} /></div>
+        </section>
+      ) : activeTool === "reports" ? (
+        <section className="tool-page">
+          <button className="back-button" type="button" onClick={() => openTool(null)}>← Back to Dashboard</button>
+          <div className="tool-page-header"><div><h1>Weekly Reports 📈</h1><p>Turn your recent study activity into a progress report.</p></div></div>
+          <div className="tool-page-content"><WeeklyReports accessToken={accessToken} /></div>
+        </section>
       ) : activeTool === "learning" ? (
 <section className="tool-page">
 
@@ -643,8 +725,11 @@ function App() {
       <span>Your personal AI learning companion</span>
     </div>
     <div className="chat-status">
-      <span className="status-dot"></span>
-      Online
+      <span className={`status-dot ${streamStatus !== "idle" ? "status-dot-working" : ""}`}></span>
+      {streamStatus === "connecting" && "Connecting…"}
+      {streamStatus === "streaming" && "Writing live…"}
+      {streamStatus === "saving" && "Saving…"}
+      {streamStatus === "idle" && "Online"}
     </div>
   </div>
 
@@ -935,6 +1020,36 @@ function App() {
       <p>Review, practice, and set goals.</p>
     </div>
   </div>
+
+  <div
+    className="tool-card reports-card"
+    onClick={() => openTool("reports")}
+    onKeyDown={(event) => openToolWithKeyboard(event, "reports")}
+    role="button"
+    tabIndex="0"
+  >
+    <div className="tool-icon">📈</div>
+    <div>
+      <h3>Weekly Reports</h3>
+      <p>Generate and review study summaries.</p>
+    </div>
+  </div>
+
+  {isAdmin && (
+    <div
+      className="tool-card admin-card"
+      onClick={() => openTool("admin")}
+      onKeyDown={(event) => openToolWithKeyboard(event, "admin")}
+      role="button"
+      tabIndex="0"
+    >
+      <div className="tool-icon">⚙️</div>
+      <div>
+        <h3>Admin Dashboard</h3>
+        <p>Monitor the backend and queued jobs.</p>
+      </div>
+    </div>
+  )}
 
 </div>
 </div>
