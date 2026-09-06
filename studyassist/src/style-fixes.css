@@ -142,3 +142,26 @@ button.delete-action:hover { color:#a41c2d; background:#fff0f1; }
 @media(max-width:1000px) { .practice-topics {grid-template-columns:1fr;} .practice-topic {display:flex; align-items:center; justify-content:space-between; gap:16px;} .practice-topic button {flex-shrink:0;} }
 @media(max-width:800px) { .profile-layout {grid-template-columns:1fr;} .study-resume {width:calc(100% - 36px);} .resume-grid {grid-template-columns:1fr;} }
 @media(max-width:650px) { .profile-overview {padding:12px 0 24px; gap:16px;} .profile-overview h1 {font-size:26px;} .profile-monogram {width:60px;height:60px;border-radius:18px;} .profile-panel {padding:22px;} .practice-panel {padding:20px;} .resume-card {padding:18px;} .practice-topic {flex-wrap:wrap;} .profile-overview p {font-size:13px;} }
+
+/* Shared homepage section rhythm. */
+.main-area > .study-resume, .main-area > .study-tools {
+  width:calc(100% - 76px); max-width:1320px; margin:32px auto;
+}
+.study-resume > .resume-heading, .study-tools .tool-heading {
+  display:block; padding:0; margin:0 0 20px; text-align:left;
+}
+.study-resume > .resume-heading h2, .study-tools .tool-heading h2 {
+  margin:0 0 8px; font-size:22px; line-height:1.35; font-weight:700;
+  letter-spacing:-.4px; color:#292338;
+}
+.study-resume > .resume-heading p, .study-tools .tool-heading p {
+  margin:0; font-size:14px; line-height:1.6; color:#81798e;
+}
+.study-tools .more-tools-section { margin-top:36px; }
+.quiz-app > .practice-panel { margin:24px 0; }
+@media(max-width:850px) {
+ .main-area > .study-resume, .main-area > .study-tools {width:calc(100% - 36px);}
+}
+@media(max-width:650px) {
+ .study-resume > .resume-heading h2, .study-tools .tool-heading h2 {font-size:20px;}
+}

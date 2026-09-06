@@ -57,7 +57,6 @@ function App() {
   const [sessionId, setSessionId] = useState(null);
 
   const [messages, setMessages] = useState([]);
-  const [practiceTopic, setPracticeTopic] = useState(null);
   const [conversations, setConversations] = useState([]);
   const [conversationPagination, setConversationPagination] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -627,7 +626,7 @@ function App() {
     </div>
   </div>
 
-  <Quiz key={session.user.id} accessToken={accessToken} userId={session.user.id} initialTopic={practiceTopic} />
+  <Quiz key={session.user.id} accessToken={accessToken} userId={session.user.id} />
 </div>
   </section>
 ) : activeTool === "plan" ? (
@@ -919,7 +918,7 @@ function App() {
             Continue current chat
           </button>
         )}
-        <StudyNext accessToken={accessToken} userId={session.user.id} conversations={conversations} onChat={openConversation} onTool={openTool} onPractice={(topic) => { setPracticeTopic(topic); openTool("quiz"); }} />
+        <StudyNext accessToken={accessToken} userId={session.user.id} conversations={conversations} onChat={openConversation} onTool={openTool} />
         <section className="study-tools">
 
           <div className="tool-heading">

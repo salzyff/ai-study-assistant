@@ -1,3 +1,4 @@
+import PracticeTopics from "./PracticeTopics";
 import AnswerReport from "./AnswerReport";
 import {readQuizDraft,saveQuizDraft} from "../utils/quizDraft";
 import { useState } from "react";
@@ -159,6 +160,7 @@ function Quiz({ accessToken, userId, initialTopic }) {
         </div>
   
         {!quiz && draft && <div className="study-next"><p>Unfinished quiz: {draft.quiz.topic}</p><button type="button" disabled={loading} onClick={resume}>Resume saved quiz</button><button type="button" disabled={loading} onClick={()=>{persist(null);setDraft(null);}}>Discard saved quiz</button></div>}
+        {!quiz && !draft && <PracticeTopics accessToken={accessToken} onPractice={t=>{setSubject(t.subject);setTopic(t.topic);setAdaptive(true);document.getElementById("quiz-topic")?.focus();}} />}
         {!quiz && !draft && (
           <form className="quiz-generator" onSubmit={generateQuiz}>
   
