@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiRequest } from "../api";
 import DeleteConfirmation from "./DeleteConfirmation";
+import UserActivity from "./UserActivity";
 
 const PAGE_SIZE = 20;
 
@@ -14,6 +15,9 @@ function isSuspended(user) {
 }
 
 function UserManagement({ accessToken }) {
+  const [selectedUser, setSelectedUser] = useState(null);
+  const requestVersion = useRef(0);
+  const [roleFilter, setRoleFilter] = useState("all");
   const [users, setUsers] = useState([]);
   const [pagination, setPagination] = useState(null);
   const [offset, setOffset] = useState(0);
@@ -26,33 +30,35 @@ function UserManagement({ accessToken }) {
   const [message, setMessage] = useState("");
 
   const loadUsers = useCallback(async (nextOffset = 0) => {
+    const version = ++requestVersion.current;
     try {
       setLoading(true);
       setError("");
       const data = await apiRequest(`/api/admin/users?limit=${PAGE_SIZE}&offset=${nextOffset}`, { accessToken });
+      if (version !== requestVersion.current) return;
       setUsers(data.users || []);
       setPagination(data.pagination || null);
       setOffset(nextOffset);
     } catch (requestError) {
-      setError(requestError.message);
+      if (version === requestVersion.current) setError(requestError.message);
     } finally {
-      setLoading(false);
+      if (version === requestVersion.current) setLoading(false);
     }
   }, [accessToken]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => loadUsers(0), 0);
-    return () => window.clearTimeout(timer);
+    return () => { window.clearTimeout(timer); requestVersion.current += 1; };
   }, [loadUsers]);
 
   const visibleUsers = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) return users;
     return users.filter((user) =>
-      user.email?.toLowerCase().includes(query)
-      || user.displayName?.toLowerCase().includes(query),
+      (roleFilter === "all" || (roleFilter === "admin" ? user.isAdmin : !user.isAdmin)) &&
+      (!query || user.email?.toLowerCase().includes(query)
+      || user.displayName?.toLowerCase().includes(query)),
     );
-  }, [search, users]);
+  }, [search, users, roleFilter]);
 
   async function changeStatus(user) {
     const suspended = !isSuspended(user);
@@ -120,6 +126,8 @@ function UserManagement({ accessToken }) {
     }
   }
 
+  if (selectedUser) return <UserActivity key={selectedUser.id} user={selectedUser} accessToken={accessToken} onClose={() => setSelectedUser(null)} />;
+
   return (
     <div className="operations-page">
       <div className="operations-toolbar user-toolbar">
@@ -128,6 +136,7 @@ function UserManagement({ accessToken }) {
           <p>View account activity and control access.</p>
         </div>
         <div className="user-toolbar-actions">
+          <select aria-label="Filter roles on this page" value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}><option value="all">All roles</option><option value="admin">Admins</option><option value="member">Members</option></select>
           <input
             type="search"
             value={search}
@@ -167,6 +176,7 @@ function UserManagement({ accessToken }) {
                   <td>{formatDate(user.createdAt)}</td>
                   <td>{formatDate(user.lastSignInAt)}</td>
                   <td>
+                    <button type="button" onClick={() => setSelectedUser(user)}>Activity &amp; AI allowance</button>
                     {protectedAccount ? (
                       <span className="protected-account">
                         {user.isEnvironmentAdmin ? "Original admin — protected" : "Current account — protected"}

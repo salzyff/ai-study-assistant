@@ -608,6 +608,16 @@
     .study-header h1 { letter-spacing: -0.6px; }
   }
 
+  .admin-activity { padding: 28px; background: #fff; border: 1px solid #e7e2f5; border-radius: 18px; }
+  .admin-activity h2 { overflow-wrap: anywhere; margin-top: 28px; }
+  .admin-activity p { line-height: 1.7; }
+  .admin-limit-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px; margin: 28px 0; }
+  .admin-limit-form label { display: grid; gap: 10px; }
+  .admin-limit-form input { width: 160px; padding: 12px; border: 1px solid #d8d1e8; border-radius: 8px; font: inherit; }
+  .admin-activity button { padding: 12px 16px; background: #f1edfc; color: #59447f; border: 1px solid #ded5ef; border-radius: 9px; cursor: pointer; }
+  .admin-activity button:disabled { opacity: .6; cursor: not-allowed; }
+  .admin-activity button:focus-visible { outline: 2px solid #6d50b3; outline-offset: 3px; }
+
   .status {
     display: flex;
     align-items: center;
@@ -909,11 +919,11 @@
   
   .study-tools {
     width: min(1050px, calc(100% - 60px));
-    margin: 0 auto 45px;
+    margin: 40px auto 56px;
   }
   
   .tool-heading {
-    margin-bottom: 15px;
+    margin-bottom: 26px;
   }
   
   .tool-heading h2 {
@@ -923,7 +933,7 @@
   }
   
   .tool-heading p {
-    margin: 5px 0 0;
+    margin: 12px 0 0;
     color: #9ca3af;
     font-size: 12px;
   }

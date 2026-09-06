@@ -1,0 +1,23 @@
+.admin-console .admin-banner { padding: 36px; background: linear-gradient(120deg,#342052,#6545a0); border-radius: 20px; color: white; }
+.admin-banner small { letter-spacing: 2px; font-size: 10px; }
+.admin-console .admin-banner h2 { font-size: clamp(26px,3vw,38px); margin: 16px 0; color: white; }
+.admin-banner p { color: #e4d9f4; line-height: 1.8; }
+.admin-nav { display: flex; flex-wrap: wrap; gap: 10px; padding: 26px 0; }
+.admin-console .admin-nav button { padding: 12px 20px; border: 1px solid #e2daef; border-radius: 10px; background: white; color: #51396f; cursor: pointer; font: inherit; font-size: 13px; }
+.admin-console .admin-nav button[aria-current] { color: white; background: #5a3988; border-color: #5a3988; }
+.admin-console .operations-toolbar { padding: 24px; background: #faf8fe; border: 1px solid #e7dff2; border-radius: 16px; margin-bottom: 28px; }
+.admin-console .admin-stat-grid { gap: 20px; }
+.admin-console .admin-stat-card { padding: 26px; border-radius: 16px; }
+.admin-console .admin-stat-card strong { font-size: 32px; }
+.admin-guide { padding: 28px; margin-top: 26px; background: #faf8fe; border: 1px solid #e7dff2; border-radius: 16px; line-height: 1.8; }
+.admin-guide button, .admin-confirm button { padding: 11px 16px; border: 1px solid #dacbeb; border-radius: 10px; color: #5a3988; background: white; cursor: pointer; }
+.admin-confirm { padding: 22px; background: #f4eefa; border: 1px solid #dacbeb; border-radius: 12px; margin-bottom: 24px; }
+.admin-confirm button + button { margin-left: 12px; }
+.admin-filter { display: flex; align-items: center; gap: 14px; margin: 24px 0; }
+.admin-filter select { padding: 10px 16px; border: 1px solid #dacbeb; border-radius: 10px; background: white; font: inherit; }
+.admin-console details { max-width: 320px; overflow-wrap: anywhere; }
+.admin-console summary { padding: 12px 0; cursor: pointer; color: #65458d; }
+.admin-console .admin-table td { vertical-align: top; }
+.admin-console button:focus-visible { outline: 2px solid #7550b4; outline-offset: 3px; }
+.admin-console button:disabled { cursor: not-allowed; opacity: .6; }
+@media(max-width:700px) { .admin-console .admin-banner { padding: 24px; } .admin-nav button { flex: 1 1 auto; } .admin-console .admin-stat-grid { grid-template-columns: 1fr; } .admin-console .operations-toolbar { padding: 18px; } }

@@ -1,6 +1,8 @@
 import { supabase } from "../supabase.js";
 
-function getDailyLimit() {
+export function getDailyLimit(user) {
+  const override = user?.app_metadata?.ai_daily_limit;
+  if (Number.isInteger(override) && override >= 0 && override <= 10000) return override;
   const configuredLimit = Number(process.env.AI_DAILY_LIMIT);
   return Number.isInteger(configuredLimit) && configuredLimit > 0
     ? configuredLimit
@@ -13,7 +15,10 @@ function startOfUtcDay() {
 }
 
 export async function getAiUsage(userId) {
-  const dailyLimit = getDailyLimit();
+  const { data, error: userError } = await supabase.auth.admin.getUserById(userId);
+  if (userError) throw userError;
+  if (!data.user) throw new Error("User not found");
+  const dailyLimit = getDailyLimit(data.user);
   const { count, error } = await supabase
     .from("ai_usage")
     .select("id", { count: "exact", head: true })

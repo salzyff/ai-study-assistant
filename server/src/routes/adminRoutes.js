@@ -1,8 +1,9 @@
 import express from "express";
+import { getAiUsage } from "../middleware/aiUsage.js";
 import { supabase } from "../supabase.js";
 import { adminUserProtectionReason, isAdminUser, isEnvironmentAdmin, requireAdmin } from "../middleware/requireAdmin.js";
 import { paginationResult, parsePagination } from "../utils/pagination.js";
-import { RequestValidationError, uuidField } from "../utils/validation.js";
+import { RequestValidationError, uuidField, enumField } from "../utils/validation.js";
 import { runBackgroundJobsOnce } from "../services/backgroundJobs.js";
 import { getRecentLogs, logger } from "../utils/logger.js";
 
@@ -15,6 +16,62 @@ router.get("/status", (req, res) => {
 });
 
 router.use(requireAdmin);
+
+router.get("/activity", async (req, res) => {
+  try {
+    const pagination = parsePagination(req.query, { defaultLimit: 20, maxLimit: 50 });
+    let query = supabase.from("ai_usage").select("id, user_id, feature, created_at", { count: "exact" });
+    if (req.query.userId) query = query.eq("user_id", uuidField(req.query.userId, "userId"));
+    const { data, error, count } = await query.order("created_at", { ascending: false }).order("id", { ascending: false }).range(pagination.from, pagination.to);
+    if (error) throw error;
+    res.json({ events: data, pagination: paginationResult({ ...pagination, count, returned: data.length }) });
+  } catch (error) {
+    res.status(error instanceof RequestValidationError ? 400 : 500).json({ error: error instanceof RequestValidationError ? error.message : "Could not load activity" });
+  }
+});
+
+router.get("/users/:userId/activity", async (req, res) => {
+  try {
+    const userId = uuidField(req.params.userId, "userId");
+    const pagination = parsePagination(req.query, { defaultLimit: 20, maxLimit: 50 });
+    const [usage, events] = await Promise.all([
+      getAiUsage(userId),
+      supabase.from("ai_usage").select("id, feature, created_at", { count: "exact" })
+        .eq("user_id", userId).order("created_at", { ascending: false })
+        .order("id", { ascending: false }).range(pagination.from, pagination.to),
+    ]);
+    if (events.error) throw events.error;
+    res.json({ usage, events: events.data, pagination: paginationResult({ ...pagination, count: events.count, returned: events.data.length }) });
+  } catch (error) {
+    if (error instanceof RequestValidationError) return res.status(400).json({ error: error.message });
+    res.status(500).json({ error: "Could not load user activity" });
+  }
+});
+
+router.patch("/users/:userId/limit", async (req, res) => {
+  try {
+    const userId = uuidField(req.params.userId, "userId");
+    const limit = req.body.limit;
+    if (limit !== null && (!Number.isInteger(limit) || limit < 0 || limit > 10000)) {
+      return res.status(400).json({ error: "Limit must be a whole number from 0 to 10000, or null to use the default" });
+    }
+    const { data: target, error: lookupError } = await supabase.auth.admin.getUserById(userId);
+    if (lookupError) throw lookupError;
+    if (!target.user) return res.status(404).json({ error: "User not found" });
+    if (isEnvironmentAdmin(target.user) && req.user.id !== userId) {
+      return res.status(403).json({ error: "Only the original admin can change their own limit" });
+    }
+    const { error } = await supabase.auth.admin.updateUserById(userId, {
+      app_metadata: { ai_daily_limit: limit },
+    });
+    if (error) throw error;
+    logger.info("admin_user_limit_changed", { adminUserId: req.user.id, targetUserId: userId, limit });
+    res.json({ message: limit === null ? "Default limit restored" : "Daily limit updated" });
+  } catch (error) {
+    if (error instanceof RequestValidationError) return res.status(400).json({ error: error.message });
+    res.status(500).json({ error: "Could not update the daily limit" });
+  }
+});
 
 router.get("/overview", async (_req, res) => {
   try {
@@ -162,6 +219,7 @@ router.patch("/users/:userId/status", async (req, res) => {
       ban_duration: req.body.suspended ? "876000h" : "none",
     });
     if (error) throw error;
+    logger.info(req.body.suspended ? "admin_user_suspended" : "admin_user_reactivated", { adminUserId: req.user.id, targetUserId: userId });
     res.json({
       user: {
         id: data.user.id,
@@ -185,6 +243,7 @@ router.delete("/users/:userId", async (req, res) => {
 
     const { error } = await supabase.auth.admin.deleteUser(userId, true);
     if (error) throw error;
+    logger.info("admin_user_deleted", { adminUserId: req.user.id, targetUserId: userId });
     res.json({ message: "User deleted" });
   } catch (error) {
     if (error instanceof RequestValidationError) return res.status(400).json({ error: error.message });
@@ -196,10 +255,14 @@ router.delete("/users/:userId", async (req, res) => {
 router.get("/jobs", async (req, res) => {
   try {
     const pagination = parsePagination(req.query, { defaultLimit: 30 });
-    const { data, error, count } = await supabase
+    const status = enumField(req.query.status, "status", ["all", "queued", "processing", "completed", "failed"], "all");
+    let query = supabase
       .from("background_jobs")
-      .select("id, user_id, job_type, status, attempts, error_message, worker_id, created_at, started_at, finished_at", { count: "exact" })
+      .select("id, user_id, job_type, status, attempts, error_message, worker_id, created_at, started_at, finished_at", { count: "exact" });
+    if (status !== "all") query = query.eq("status", status);
+    const { data, error, count } = await query
       .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
       .range(pagination.from, pagination.to);
     if (error) throw error;
     res.json({ jobs: data, pagination: paginationResult({ ...pagination, count, returned: data.length }) });
@@ -222,6 +285,7 @@ router.post("/jobs/:jobId/retry", async (req, res) => {
       .maybeSingle();
     if (error) throw error;
     if (!data) return res.status(404).json({ error: "Failed job not found" });
+    logger.info("admin_job_retried", { adminUserId: req.user.id, jobId });
     res.json({ job: data });
   } catch (error) {
     if (error instanceof RequestValidationError) return res.status(400).json({ error: error.message });
