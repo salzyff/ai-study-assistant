@@ -7,6 +7,7 @@ import { supabase } from "./supabase.js";
 import { requireAuth } from "./middleware/requireAuth.js";
 import taskRoutes from "./routes/taskRoutes.js";
 import studyPlanRoutes from "./routes/studyPlanRoutes.js";
+import studyUpgradeRoutes from "./routes/studyUpgradeRoutes.js";
 import quizRoutes from "./routes/quizRoutes.js";
 import noteRoutes from "./routes/noteRoutes.js";
 import flashcardRoutes from "./routes/flashcardRoutes.js";
@@ -121,6 +122,7 @@ app.use("/api", requireAuth);
 app.use("/api/chat", aiLimiter, dailyAiLimit);
 app.use("/api/study-plans", aiLimiter, dailyAiLimit);
 app.use("/api/quizzes/generate", aiLimiter, dailyAiLimit);
+app.use("/api/study-upgrades/hint", aiLimiter);
 app.use("/api/tasks/:taskId/study-session", aiLimiter, dailyAiLimit);
 app.use("/api/notes/:noteId/ask", aiLimiter);
 app.use("/api/notes/:noteId/summarize", aiLimiter);
@@ -394,10 +396,10 @@ Student: ${cleanMessage}`;
     }
     if (!answer.trim()) throw new Error("The AI returned an empty response");
 
-    const { error: messagesError } = await supabase.from("messages").insert([
+    const { data: savedMessages, error: messagesError } = await supabase.from("messages").insert([
       { conversation_id: conversationId, role: "student", content: cleanMessage },
       { conversation_id: conversationId, role: "assistant", content: answer },
-    ]);
+    ]).select("id,role");
     if (messagesError) throw messagesError;
 
     const { error: updateError } = await supabase
@@ -408,7 +410,7 @@ Student: ${cleanMessage}`;
     if (updateError) throw updateError;
 
     await recordAiUsage(req.user.id, `chat_${mode}`);
-    sendStreamEvent(res, "done", { sessionId: conversationId });
+    sendStreamEvent(res, "done", { sessionId: conversationId, messageId: savedMessages?.find(message => message.role === "assistant")?.id });
     res.end();
   } catch (error) {
     if (createdConversation && conversationId) {
@@ -552,6 +554,7 @@ app.delete(
 app.use("/api/tasks", taskRoutes);
 app.use("/api/study-plans", studyPlanRoutes);
 app.use("/api/quizzes", quizRoutes);
+app.use("/api/study-upgrades", studyUpgradeRoutes);
 app.use("/api/notes", noteRoutes);
 app.use("/api/flashcards", flashcardRoutes);
 app.use("/api/progress", progressRoutes);

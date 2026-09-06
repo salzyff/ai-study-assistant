@@ -85,3 +85,13 @@ button.delete-action:hover { color:#a41c2d; background:#fff0f1; }
 .learning-utility button:disabled { opacity:.55; cursor:not-allowed; }
 .task-item-main, .task-item-content, .note-study-header > div, .flashcard-study-header > div { min-width:0; }
 .task-item-content h3, .note-study-header h3, .flashcard-study-header h3 { overflow-wrap:anywhere; }
+
+.study-next { margin:24px; padding:24px; border:1px solid #e9e7f5; border-radius:16px; background:white; }
+.study-next-actions { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+.study-next button, .study-next-actions button, .quiz-hint button, .answer-report button { padding:10px 14px; border:1px solid #ded6f3; border-radius:9px; color:#5945c8; background:#f6f3ff; font:inherit; font-size:13px; cursor:pointer; }
+.study-next article { padding:14px 0; border-top:1px solid #eeecf5; }
+.answer-report { margin-top:12px; }
+.answer-report textarea { display:block; width:100%; padding:10px; margin:8px 0; border:1px solid #ded6f3; border-radius:8px; }
+.answer-report button + button { margin-left:8px; }
+.quiz-hint { margin-top:14px; padding:12px; border-radius:10px; background:#faf8ff; }
+@media(max-width:650px){ .study-next {margin:18px 14px;padding:18px;} }

@@ -1,10 +1,38 @@
+import AnswerReport from "./AnswerReport";
+import {readQuizDraft,saveQuizDraft} from "../utils/quizDraft";
 import { useState } from "react";
 import { SUBJECTS } from "../constants/subjects";
 import { apiRequest } from "../api";
 
-function Quiz({ accessToken }) {
-  const [subject, setSubject] = useState("Biology");
-  const [topic, setTopic] = useState("");
+function Quiz({ accessToken, userId, initialTopic }) {
+  const [draft, setDraft] = useState(() => readQuizDraft(userId));
+  const [adaptive, setAdaptive] = useState(Boolean(initialTopic));
+  const [hints, setHints] = useState({});
+  const [hintBusy, setHintBusy] = useState("");
+  const [saveNotice, setSaveNotice] = useState("");
+  function persist(value) {
+    const ok = saveQuizDraft(userId, value);
+    setSaveNotice(ok ? (value ? "Answers saved in this browser." : "") : "Could not save locally. Keep this tab open to avoid losing answers.");
+  }
+  async function resume() {
+    setLoading(true); setError("");
+    try {
+      const data = await apiRequest(`/api/study-upgrades/quiz/${draft.quiz.id}`, {accessToken});
+      const restored = Object.fromEntries(data.questions.filter(q => Number.isInteger(draft.answers[q.id]) && draft.answers[q.id] >= 0 && draft.answers[q.id] < q.options.length).map(q => [q.id,draft.answers[q.id]]));
+      setQuiz(data.quiz); setQuestions(data.questions); setAnswers(restored); setDraft(null);
+    } catch(e) { setError(e.message); if ([404,409].includes(e.status)) { persist(null); setDraft(null); } }
+    finally { setLoading(false); }
+  }
+  async function hint(question) {
+    if(hintBusy) return;
+    const level = (hints[question.id]?.level || 0) + 1;
+    if(level > 3) return;
+    setHintBusy(question.id); setError("");
+    try { const data = await apiRequest('/api/study-upgrades/hint',{accessToken,method:'POST',body:{quizId:quiz.id,questionId:question.id,level}}); setHints(current => ({...current,[question.id]:{level,text:data.hint}})); }
+    catch(e){setError(e.message);} finally {setHintBusy("");}
+  }
+  const [subject, setSubject] = useState(initialTopic?.subject || "Biology");
+  const [topic, setTopic] = useState(initialTopic?.topic || "");
   const [numberOfQuestions, setNumberOfQuestions] =
     useState(5);
 
@@ -40,11 +68,13 @@ function Quiz({ accessToken }) {
           subject,
           topic: topic.trim(),
           numberOfQuestions: Number(numberOfQuestions),
+          mode: adaptive ? "adaptive" : "practice",
         },
       });
 
       setQuiz(data.quiz);
       setQuestions(data.questions);
+      setHints({}); setDraft(null); persist({quiz:data.quiz,questions:data.questions,answers:{}});
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -57,10 +87,9 @@ function Quiz({ accessToken }) {
       return;
     }
 
-    setAnswers((currentAnswers) => ({
-      ...currentAnswers,
-      [questionId]: optionIndex,
-    }));
+    const next = {...answers,[questionId]:optionIndex};
+    setAnswers(next);
+    persist({quiz,questions,answers:next});
   }
 
   async function submitQuiz() {
@@ -92,6 +121,7 @@ function Quiz({ accessToken }) {
       });
 
       setResults(data.results);
+      persist(null); setDraft(null);
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -100,6 +130,7 @@ function Quiz({ accessToken }) {
   }
 
   function startAnotherQuiz() {
+    persist(null); setDraft(null); setHints({});
     setQuiz(null);
     setQuestions([]);
     setAnswers({});
@@ -127,7 +158,8 @@ function Quiz({ accessToken }) {
           <div className="quiz-badge">🧠 AI Quiz</div>
         </div>
   
-        {!quiz && (
+        {!quiz && draft && <div className="study-next"><p>Unfinished quiz: {draft.quiz.topic}</p><button type="button" disabled={loading} onClick={resume}>Resume saved quiz</button><button type="button" disabled={loading} onClick={()=>{persist(null);setDraft(null);}}>Discard saved quiz</button></div>}
+        {!quiz && !draft && (
           <form className="quiz-generator" onSubmit={generateQuiz}>
   
             <div className="quiz-field">
@@ -163,6 +195,7 @@ function Quiz({ accessToken }) {
               />
             </div>
   
+            <div className="quiz-field"><label><input type="checkbox" checked={adaptive} onChange={e=>setAdaptive(e.target.checked)}/> Adaptive difficulty from my results</label></div>
             <div className="quiz-field">
               <label htmlFor="question-count">🔢 Questions</label>
   
@@ -189,6 +222,7 @@ function Quiz({ accessToken }) {
           </form>
         )}
   
+        {saveNotice && <p role="status">{saveNotice}</p>}
         {error && (
           <div className="quiz-error">
             ⚠️ {error}
@@ -205,7 +239,7 @@ function Quiz({ accessToken }) {
               </div>
   
               <div className="question-count">
-                {questions.length} Questions
+                {questions.length} Questions · {quiz.difficulty} · {quiz.mode}
               </div>
             </div>
   
@@ -258,6 +292,8 @@ function Quiz({ accessToken }) {
                     )}
                   </div>
   
+                  {score === null && quiz.mode !== "exam" && <div className="quiz-hint"><button type="button" disabled={loading || Boolean(hintBusy) || hints[question.id]?.level === 3} onClick={()=>hint(question)}>{hintBusy === question.id ? "Loading hint…" : hints[question.id] ? "More help" : "Give me a hint"}</button>{hints[question.id] && <p>{hints[question.id].text}</p>}</div>}
+                  <AnswerReport accessToken={accessToken} kind="quiz" sourceId={question.id} containerId={quiz.id}/>
                   {result && (
                     <div
                       className={`quiz-result ${

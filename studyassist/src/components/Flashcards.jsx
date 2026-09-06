@@ -78,6 +78,16 @@ function Flashcards({ accessToken }) {
     }
   }
 
+  async function openDue() {
+    if(loading) return;
+    setLoading(true); setError("");
+    try {
+      const data = await apiRequest('/api/flashcards/due?limit=100',{accessToken});
+      setCards(data.cards); setCurrentCard(0); setShowAnswer(false);
+      setActiveSet(data.cards.length ? {id:"due",subject:"Scheduled review",topic:"Cards due now"} : null);
+      setMessage(data.cards.length ? `${data.cards.length} cards due. Rate each card to schedule its next review.` : "You’re caught up. No cards due right now.");
+    } catch(e) {setError(e.message);} finally {setLoading(false);}
+  }
   async function openSet(setId) {
     try {
       setLoading(true);
@@ -108,8 +118,8 @@ function Flashcards({ accessToken }) {
       setLoading(true);
       setError("");
 
-      await apiRequest(
-        `/api/flashcards/sets/${activeSet.id}/review`,
+      const reviewResult = await apiRequest(
+        `/api/flashcards/sets/${card.set_id || activeSet.id}/review`,
         {
           accessToken,
           method: "POST",
@@ -120,6 +130,7 @@ function Flashcards({ accessToken }) {
         }
       );
 
+      setMessage(`Next review: ${new Date(reviewResult.schedule.nextReviewAt).toLocaleString()}`);
       if (currentCard < cards.length - 1) {
         setCurrentCard((index) => index + 1);
         setShowAnswer(false);
@@ -165,6 +176,7 @@ function Flashcards({ accessToken }) {
 
   return (
     <section className="tool-page">
+      <div className="study-next-actions"><button type="button" disabled={loading} onClick={openDue}>Review due cards</button><p>Again: 10 minutes · Hard, Good or Easy: progressively longer review intervals.</p></div>
 
       <div className="tool-page-header">
         <div>

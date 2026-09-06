@@ -1,3 +1,5 @@
+import StudyNext from "./components/StudyNext";
+import AnswerReport from "./components/AnswerReport";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "./components/MathMarkdown";
 import Auth from "./components/Auth";
@@ -55,6 +57,7 @@ function App() {
   const [sessionId, setSessionId] = useState(null);
 
   const [messages, setMessages] = useState([]);
+  const [practiceTopic, setPracticeTopic] = useState(null);
   const [conversations, setConversations] = useState([]);
   const [conversationPagination, setConversationPagination] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -229,7 +232,10 @@ function App() {
                 : item
             )));
           }
-          if (eventName === "done") setStreamStatus("saving");
+          if (eventName === "done") {
+            setStreamStatus("saving");
+            if(data.messageId) setMessages(current => current.map(item => item.id === assistantMessageId ? {...item,id:data.messageId} : item));
+          }
         },
       });
 
@@ -621,7 +627,7 @@ function App() {
     </div>
   </div>
 
-  <Quiz accessToken={accessToken} />
+  <Quiz key={session.user.id} accessToken={accessToken} userId={session.user.id} initialTopic={practiceTopic} />
 </div>
   </section>
 ) : activeTool === "plan" ? (
@@ -836,6 +842,7 @@ function App() {
                   <ReactMarkdown>
                     {chatMessage.content}
                   </ReactMarkdown>
+                  {chatMessage.role === "assistant" && <AnswerReport accessToken={accessToken} kind="chat" sourceId={chatMessage.id} containerId={sessionId} />}
 
                 </div>
 
@@ -914,6 +921,7 @@ function App() {
             Continue current chat
           </button>
         )}
+        <StudyNext accessToken={accessToken} userId={session.user.id} conversations={conversations} onChat={openConversation} onTool={openTool} onPractice={(topic) => { setPracticeTopic(topic); openTool("quiz"); }} />
         <section className="study-tools">
 
           <div className="tool-heading">

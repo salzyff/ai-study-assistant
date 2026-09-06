@@ -43,6 +43,16 @@ function TaskPlanner({ accessToken }) {
     };
   }, [accessToken, loadTasks]);
 
+  async function resumeStudySession() {
+    if(loading) return;
+    setLoading(true); setError("");
+    try {
+      const data=await apiRequest('/api/study-upgrades/task-resume',{accessToken});
+      setStudySession(data.studySession);
+      setStudyMessage(data.studySession ? "Study session restored." : "No unfinished study session found.");
+    } catch(e){setError(e.message);}finally{setLoading(false);}
+  }
+
   async function createTask(event) {
     event.preventDefault();
     if (loading || !title.trim()) return;
@@ -148,6 +158,7 @@ function TaskPlanner({ accessToken }) {
         <div className="task-badge">✅ Smart Tasks</div>
       </div>
 
+      <button type="button" className="task-study-button" disabled={loading} onClick={resumeStudySession}>Resume latest study session</button>
       <form className="task-generator" onSubmit={createTask}>
         <div className="task-form-grid">
           <div className="task-field task-field-wide">
