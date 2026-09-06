@@ -33,7 +33,7 @@ function DeleteConfirmation({
   if (!isOpen) {
     return (
       <button
-        className={className}
+        className={["delete-action", className].filter(Boolean).join(" ")}
         type="button"
         onClick={() => setIsOpen(true)}
         disabled={disabled}

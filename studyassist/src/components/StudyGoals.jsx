@@ -77,7 +77,7 @@ function StudyGoals({ accessToken }) {
   }
 
   return (
-    <section>
+    <section className="learning-utility">
       <h2>Weekly study goals</h2>
       <form onSubmit={createGoal}>
         <p>

@@ -169,7 +169,7 @@ function UserManagement({ accessToken }) {
                 <tr key={user.id}>
                   <td><strong>{user.displayName}</strong><small>{user.email}</small></td>
                   <td>
-                    <span className={`user-status ${suspended ? "user-status-suspended" : "user-status-active"}`}>
+                    <span className={`user-status ${suspended ? "user-status-suspended" : user.emailConfirmedAt ? "user-status-active" : "user-status-unconfirmed"}`}>
                       {suspended ? "Suspended" : user.emailConfirmedAt ? "Active" : "Unconfirmed"}
                     </span>
                     {user.isAdmin && <span className="user-admin-badge">Admin</span>}

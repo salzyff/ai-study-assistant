@@ -155,7 +155,7 @@ function QuestionBank({ accessToken }) {
   }
 
   return (
-    <section>
+    <section className="learning-utility">
       <h2>Practice question bank</h2>
       <p>AI questions are newly generated exam-style practice, not copied official past papers.</p>
       <form onSubmit={generateQuestions}>
