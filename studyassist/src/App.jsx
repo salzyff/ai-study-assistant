@@ -1,3 +1,4 @@
+import { normalizeMessages, storePreferences } from "./utils/chatSafety";
 import StudyNext from "./components/StudyNext";
 import AnswerReport from "./components/AnswerReport";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -70,7 +71,15 @@ function App() {
   const accessToken = session?.access_token;
 
   useEffect(() => {
-    localStorage.setItem("studyai-preferences", JSON.stringify(preferences));
+    const frame = window.requestAnimationFrame(() => {
+      window.scrollTo(0, 0);
+      document.querySelector(".main-area")?.scrollTo?.(0, 0);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [activeTool, sessionId]);
+
+  useEffect(() => {
+    storePreferences(preferences);
   }, [preferences]);
 
   useEffect(() => {
@@ -172,7 +181,7 @@ function App() {
       setSessionId(conversation.id);
       setSubject(SUBJECTS.includes(conversation.subject) ? conversation.subject : "General");
       setMode(STUDY_MODES.includes(conversation.mode) ? conversation.mode : "ask");
-      setMessages(data.messages || []);
+      setMessages(normalizeMessages(data.messages));
     } catch (requestError) {
       if (requestId === navigationRequest.current) {
         setError(requestError.message);
