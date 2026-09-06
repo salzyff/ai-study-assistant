@@ -105,9 +105,7 @@ function Progress({ accessToken }) {
       <div className="progress-app-header">
 
         <div>
-          <div className="progress-badge">
-            📊 STUDY ANALYTICS
-          </div>
+          
 
           <h2>Study Progress</h2>
 

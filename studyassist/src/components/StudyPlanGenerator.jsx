@@ -58,7 +58,7 @@ function StudyPlanGenerator({ accessToken }) {
           <p>Create a personalized study schedule for your exam.</p>
         </div>
 
-        <div className="plan-badge">📅 Smart Planner</div>
+        
       </div>
 
       <form className="plan-generator" onSubmit={generatePlan}>

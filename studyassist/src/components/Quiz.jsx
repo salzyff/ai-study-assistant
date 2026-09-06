@@ -155,7 +155,7 @@ function Quiz({ accessToken, userId, initialTopic }) {
             <p>Choose a subject and challenge yourself.</p>
           </div>
   
-          <div className="quiz-badge">🧠 AI Quiz</div>
+          
         </div>
   
         {!quiz && draft && <div className="study-next"><p>Unfinished quiz: {draft.quiz.topic}</p><button type="button" disabled={loading} onClick={resume}>Resume saved quiz</button><button type="button" disabled={loading} onClick={()=>{persist(null);setDraft(null);}}>Discard saved quiz</button></div>}

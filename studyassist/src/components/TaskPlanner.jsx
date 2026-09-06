@@ -155,7 +155,7 @@ function TaskPlanner({ accessToken }) {
           <h2>Task Planner</h2>
           <p>Create, manage, and track your study tasks.</p>
         </div>
-        <div className="task-badge">✅ Smart Tasks</div>
+        
       </div>
 
       <button type="button" className="task-study-button" disabled={loading} onClick={resumeStudySession}>Resume latest study session</button>

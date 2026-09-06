@@ -197,9 +197,7 @@ function Flashcards({ accessToken }) {
             </p>
           </div>
 
-          <span className="flashcards-badge">
-            🧠 Smart Review
-          </span>
+          
         </div>
 
         <form

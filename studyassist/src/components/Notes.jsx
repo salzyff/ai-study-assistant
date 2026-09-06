@@ -176,7 +176,7 @@ function Notes({ accessToken }) {
             <p>Upload PDFs, text files, or Markdown notes.</p>
           </div>
 
-          <span className="notes-badge">📄 Smart Notes</span>
+          
         </div>
 
         <form className="notes-generator" onSubmit={uploadNotes}>

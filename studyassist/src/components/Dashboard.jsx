@@ -129,7 +129,7 @@ function Dashboard({ accessToken }) {
 
       <div className="dashboard-header">
         <div className="dashboard-heading">
-          <span className="dashboard-label">YOUR LEARNING SPACE</span>
+          
 
           <h2>
             Welcome back! 👋
@@ -191,7 +191,7 @@ function Dashboard({ accessToken }) {
       <div className="dashboard-section dashboard-ai-section">
         <div className="dashboard-section-header">
           <div>
-            <span className="section-label">AI ASSISTANT</span>
+            
             <h3>Daily AI Usage 🤖</h3>
           </div>
 

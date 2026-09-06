@@ -743,15 +743,13 @@ function App() {
     <div className="ai-avatar">🧠</div>
     <div className="chat-title">
       <strong>Study Assistant</strong>
-      <span>Your personal AI learning companion</span>
     </div>
-    <div className="chat-status">
+    {streamStatus !== "idle" && <div className="chat-status" role="status">
       <span className={`status-dot ${streamStatus !== "idle" ? "status-dot-working" : ""}`}></span>
       {streamStatus === "connecting" && "Connecting…"}
       {streamStatus === "streaming" && "Writing live…"}
       {streamStatus === "saving" && "Saving…"}
-      {streamStatus === "idle" && "Online"}
-    </div>
+    </div>}
   </div>
 
           <div className="messages">
