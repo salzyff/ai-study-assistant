@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiRequest } from "../api";
 import DeleteConfirmation from "./DeleteConfirmation";
 import UserActivity from "./UserActivity";
+import UserActionsMenu from "./UserActionsMenu";
 
 const PAGE_SIZE = 20;
 
@@ -176,9 +177,7 @@ function UserManagement({ accessToken }) {
                   <td>{formatDate(user.createdAt)}</td>
                   <td>{formatDate(user.lastSignInAt)}</td>
                   <td>
-                    <details className="user-action-disclosure">
-                    <summary aria-label={`Actions for ${user.email}`}><span aria-hidden="true">⋮</span></summary>
-                    <div className="user-action-panel">
+                    <UserActionsMenu email={user.email}>
                     <button type="button" onClick={() => setSelectedUser(user)}>Activity &amp; AI allowance</button>
                     {protectedAccount ? (
                       <span className="protected-account">
@@ -225,14 +224,15 @@ function UserManagement({ accessToken }) {
                           </button>
                         )}
                         <DeleteConfirmation
-                          buttonLabel="Delete"
+                          buttonLabel="Delete user"
+                          className="user-action-delete"
+                          disabled={busyUser === user.id}
                           confirmation={`Delete ${user.email}? This removes their access and cannot be undone.`}
                           onConfirm={() => deleteUser(user.id)}
                         />
                       </div>
                     )}
-                    </div>
-                    </details>
+                    </UserActionsMenu>
                   </td>
                 </tr>
               );
