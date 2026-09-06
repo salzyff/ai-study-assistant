@@ -15,8 +15,9 @@ test("admin routes enforce access, validate filters and limits, protect owner", 
   const filters = [];
   supabase.auth.admin.getUserById = async () => ({ data: { user: { id, email: "owner@example.com", app_metadata: {} } }, error: null });
   supabase.auth.admin.updateUserById = async (...args) => { updates.push(args); return { data: {}, error: null }; };
-  supabase.from = () => {
-    const query = { select() { return this; }, eq(...args) { filters.push(args); return this; }, order() { return this; }, range() { return Promise.resolve({ data: [], count: 0, error: null }); } };
+  supabase.from = (table) => {
+    const rows = table === "ai_usage" ? [{ id: "event-1", user_id: id, feature: "chat", created_at: "2026-09-06T00:00:00Z" }] : [];
+    const query = { select() { return this; }, eq(...args) { filters.push(args); return this; }, order() { return this; }, range() { return Promise.resolve({ data: rows, count: rows.length, error: null }); } };
     return query;
   };
   const app = express();
@@ -36,6 +37,9 @@ test("admin routes enforce access, validate filters and limits, protect owner", 
     assert.equal((await call("/jobs?status=running")).status, 400);
     assert.ok(filters.some(([key, value]) => key === "status" && value === "failed"));
     assert.equal((await call(`/activity?userId=${id}`)).status, 200);
+    const activity = await (await call("/activity")).json();
+    assert.equal(activity.events[0].email, "owner@example.com");
+    assert.equal(activity.events[0].user_id, id);
     assert.ok(filters.some(([key, value]) => key === "user_id" && value === id));
     for (const limit of [-1, 0.5, "100", 10001]) assert.equal((await call(`/users/${id}/limit`, { limit })).status, 400);
     assert.equal((await call(`/users/${id}/limit`, { limit: 0 })).status, 403);

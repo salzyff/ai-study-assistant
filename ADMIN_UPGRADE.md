@@ -5,7 +5,8 @@
 - Separate Overview, Users, Activity, Jobs and Server events navigation.
 - Responsive purple admin styling, larger spacing, and account/service shortcuts.
 - Existing account actions and daily allowances inside Users; role and text filters apply to the current page only.
-- Site-wide AI activity with pagination and user-ID filtering. Click a user ID to filter their events.
+- Site-wide AI activity with pagination and email labels. Click an email to filter that account's events.
+- User actions stay collapsed behind a keyboard-accessible three-dot disclosure.
 - Server-side job status filtering, job IDs, user IDs, timestamps and failure details.
 - Confirmations for retrying jobs and processing the next queued job.
 - Severity filtering for server events and admin account-action logging.

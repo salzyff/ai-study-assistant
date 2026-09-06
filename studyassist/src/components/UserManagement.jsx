@@ -176,6 +176,9 @@ function UserManagement({ accessToken }) {
                   <td>{formatDate(user.createdAt)}</td>
                   <td>{formatDate(user.lastSignInAt)}</td>
                   <td>
+                    <details className="user-action-disclosure">
+                    <summary aria-label={`Actions for ${user.email}`}><span aria-hidden="true">⋮</span></summary>
+                    <div className="user-action-panel">
                     <button type="button" onClick={() => setSelectedUser(user)}>Activity &amp; AI allowance</button>
                     {protectedAccount ? (
                       <span className="protected-account">
@@ -228,6 +231,8 @@ function UserManagement({ accessToken }) {
                         />
                       </div>
                     )}
+                    </div>
+                    </details>
                   </td>
                 </tr>
               );

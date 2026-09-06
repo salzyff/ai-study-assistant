@@ -24,7 +24,12 @@ router.get("/activity", async (req, res) => {
     if (req.query.userId) query = query.eq("user_id", uuidField(req.query.userId, "userId"));
     const { data, error, count } = await query.order("created_at", { ascending: false }).order("id", { ascending: false }).range(pagination.from, pagination.to);
     if (error) throw error;
-    res.json({ events: data, pagination: paginationResult({ ...pagination, count, returned: data.length }) });
+    const emails = new Map(await Promise.all([...new Set(data.map((event) => event.user_id))].map(async (id) => {
+      const result = await supabase.auth.admin.getUserById(id);
+      if (result.error && result.error.status !== 404) throw result.error;
+      return [id, result.data?.user?.email || null];
+    })));
+    res.json({ events: data.map((event) => ({ ...event, email: emails.get(event.user_id) })), pagination: paginationResult({ ...pagination, count, returned: data.length }) });
   } catch (error) {
     res.status(error instanceof RequestValidationError ? 400 : 500).json({ error: error instanceof RequestValidationError ? error.message : "Could not load activity" });
   }

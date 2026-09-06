@@ -17,6 +17,12 @@
 .admin-filter select { padding: 10px 16px; border: 1px solid #dacbeb; border-radius: 10px; background: white; font: inherit; }
 .admin-console details { max-width: 320px; overflow-wrap: anywhere; }
 .admin-console summary { padding: 12px 0; cursor: pointer; color: #65458d; }
+.user-action-disclosure > summary { list-style: none; display: inline-flex; justify-content: center; align-items: center; width: 40px; height: 40px; border: 1px solid #ded7eb; border-radius: 10px; font-size: 26px; background: #faf8ff; }
+.user-action-disclosure > summary::-webkit-details-marker { display: none; }
+.user-action-disclosure > summary:focus-visible { outline: 2px solid #7550b4; outline-offset: 3px; }
+.user-action-disclosure[open] > summary { background: #eae0f7; }
+.user-action-panel { display: grid; gap: 12px; padding: 16px; margin-top: 10px; min-width: 210px; border: 1px solid #e3d9ee; border-radius: 12px; background: #faf8ff; }
+.user-action-panel .user-actions { display: grid; gap: 10px; }
 .admin-console .admin-table td { vertical-align: top; }
 .admin-console button:focus-visible { outline: 2px solid #7550b4; outline-offset: 3px; }
 .admin-console button:disabled { cursor: not-allowed; opacity: .6; }
