@@ -150,7 +150,7 @@ function Auth() {
                   onChange={(event) => setPassword(event.target.value)}
                   placeholder="Enter your password"
                   autoComplete={authMode === "login" ? "current-password" : "new-password"}
-                  minLength="6"
+                  minLength={authMode === "login" ? 1 : 6}
                   required
                 />
                 <button
@@ -178,7 +178,7 @@ function Auth() {
                   onChange={(event) => setConfirmPassword(event.target.value)}
                   placeholder="Enter your password again"
                   autoComplete="new-password"
-                  minLength="6"
+                  minLength={authMode === "login" ? 1 : 6}
                   required
                 />
                 <button

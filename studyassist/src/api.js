@@ -39,6 +39,7 @@ export async function apiRequest(
   });
 
   const data = await readResponse(response);
+  if (response.status === 401 && data.code === "SESSION_ENDED") window.dispatchEvent(new Event("study-session-ended"));
 
   if (!response.ok) {
     const error = new Error(data.error || `Request failed with status ${response.status}`);
@@ -67,6 +68,7 @@ export async function streamApiRequest(
 
   if (!response.ok) {
     const data = await readResponse(response);
+  if (response.status === 401 && data.code === "SESSION_ENDED") window.dispatchEvent(new Event("study-session-ended"));
     throw new Error(data.error || `Request failed with status ${response.status}`);
   }
   if (!response.body) throw new Error("Streaming is not supported by this browser");
@@ -88,6 +90,7 @@ export async function streamApiRequest(
     onEvent?.(event, data);
   }
 
+  try {
   while (true) {
     const { done, value } = await reader.read();
     buffer += decoder.decode(value || new Uint8Array(), { stream: !done }).replaceAll("\r\n", "\n");
@@ -100,4 +103,8 @@ export async function streamApiRequest(
     if (done) break;
   }
   if (buffer.trim()) processBlock(buffer);
+  } finally {
+    await reader.cancel().catch(() => {});
+    reader.releaseLock();
+  }
 }

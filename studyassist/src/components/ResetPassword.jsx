@@ -12,6 +12,8 @@ function ResetPassword({ onComplete }) {
     if (loading) return;
     setError("");
 
+    if (password.length < 6) { setError("Use at least 6 characters for your new password."); return; }
+
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       return;
@@ -24,6 +26,8 @@ function ResetPassword({ onComplete }) {
       });
 
       if (updateError) throw updateError;
+      const { error: signOutError } = await supabase.auth.signOut({ scope: "global" });
+      if (signOutError) throw new Error("Password changed, but signing out other devices failed. Please retry signing out from your profile.");
       onComplete();
     } catch (updateError) {
       setError(updateError.message);

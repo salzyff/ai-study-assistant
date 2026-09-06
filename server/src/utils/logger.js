@@ -45,7 +45,7 @@ export function requestLogger(req, res, next) {
     logger.info("request_completed", {
       requestId: req.id,
       method: req.method,
-      path: req.originalUrl,
+      path: req.originalUrl.split("?")[0],
       status: res.statusCode,
       durationMs: Math.round((performance.now() - startedAt) * 100) / 100,
       userId: req.user?.id,

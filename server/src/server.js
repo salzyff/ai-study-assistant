@@ -52,7 +52,7 @@ app.set("trust proxy", process.env.RENDER === "true" || isProduction ? 1 : false
 app.disable("x-powered-by");
 
 app.use((req, res, next) => {
-  req.id = req.headers["x-request-id"]?.toString().slice(0, 100) || randomUUID();
+  req.id = randomUUID();
   res.setHeader("X-Request-Id", req.id);
   next();
 });
@@ -117,6 +117,7 @@ app.get("/", (req, res) => {
 // Every route beginning with /api now requires login
 app.use("/api", apiLimiter);
 app.use("/api", requireAuth);
+app.post("/api/session/heartbeat", (req, res) => res.json({ active: true }));
 
 // Gemini-powered routes have stricter limits.
 app.use("/api/chat", aiLimiter, dailyAiLimit);

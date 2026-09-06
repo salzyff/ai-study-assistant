@@ -1,3 +1,4 @@
+import { useSessionSecurity } from "./utils/useSessionSecurity";
 import { normalizeMessages, storePreferences } from "./utils/chatSafety";
 import StudyNext from "./components/StudyNext";
 import AnswerReport from "./components/AnswerReport";
@@ -92,7 +93,7 @@ function App() {
       setAuthLoading(false);
     }
 
-    loadSession();
+    loadSession().catch(() => { setSession(null); setAuthLoading(false); });
 
     const {
       data: { subscription },
@@ -102,6 +103,11 @@ function App() {
           setPasswordRecovery(true);
         }
 
+        if (!currentSession) {
+          navigationRequest.current += 1;
+          setMessages([]); setConversations([]); setSessionId(null);
+          setActiveTool(null); setIsAdmin(false);
+        }
         setSession(currentSession);
         setAuthLoading(false);
       }
@@ -109,6 +115,13 @@ function App() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const expireSession = useCallback(() => {
+    navigationRequest.current += 1;
+    setSession(null); setMessages([]); setConversations([]);
+    setSessionId(null); setActiveTool(null); setIsAdmin(false);
+  }, []);
+  useSessionSecurity(accessToken, passwordRecovery, expireSession);
 
   const loadConversations = useCallback(async ({ offset = 0, append = false } = {}) => {
     try {
@@ -165,6 +178,7 @@ function App() {
   }
 
   async function openConversation(conversation) {
+    setLoading(false); setStreamStatus("idle");
     const requestId = ++navigationRequest.current;
     try {
       setError("");
@@ -205,6 +219,7 @@ function App() {
     setStreamStatus("connecting");
     setMessage("");
 
+    const requestId = navigationRequest.current;
     const assistantMessageId = `stream-${Date.now()}`;
     setMessages((currentMessages) => [
       ...currentMessages,
@@ -229,6 +244,7 @@ function App() {
           sessionId,
         },
         onEvent(eventName, data) {
+          if (requestId !== navigationRequest.current) return;
           if (eventName === "meta") {
             setSessionId(data.sessionId);
             setStreamStatus("streaming");
@@ -247,19 +263,23 @@ function App() {
         },
       });
 
-      await loadConversations();
+      if (requestId === navigationRequest.current) await loadConversations();
     } catch (requestError) {
+      if (requestId !== navigationRequest.current) return;
       setMessages((currentMessages) => currentMessages.filter(
         (item) => item.id !== assistantMessageId || item.content,
       ));
       setError(requestError.message);
     } finally {
-      setLoading(false);
-      setStreamStatus("idle");
+      if (requestId === navigationRequest.current) {
+        setLoading(false);
+        setStreamStatus("idle");
+      }
     }
   }
 
   function startNewChat() {
+    setLoading(false);
     navigationRequest.current += 1;
     setActiveTool("chat");
     setHistoryLoading(false);
@@ -273,6 +293,7 @@ function App() {
   }
 
   function openTool(tool) {
+    setLoading(false); setStreamStatus("idle");
     navigationRequest.current += 1;
     setHistoryLoading(false);
     setActiveTool(tool);
