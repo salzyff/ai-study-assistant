@@ -176,7 +176,7 @@ function Flashcards({ accessToken }) {
 
   return (
     <section className="tool-page">
-      <div className="study-next-actions"><button type="button" disabled={loading} onClick={openDue}>Review due cards</button><p>Again: 10 minutes · Hard, Good or Easy: progressively longer review intervals.</p></div>
+
 
       <div className="tool-page-header">
         <div>
@@ -331,10 +331,11 @@ function Flashcards({ accessToken }) {
               <p>Choose a set to start reviewing.</p>
             </div>
 
+            <div className="saved-review-actions"><button className="review-due-button" type="button" disabled={loading || !sets.length} onClick={openDue}>Review due cards <span aria-hidden="true">→</span></button>
             <span className="flashcards-count">
               {sets.length}{" "}
               {sets.length === 1 ? "set" : "sets"}
-            </span>
+            </span></div>
           </div>
 
           {sets.length === 0 ? (

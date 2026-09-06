@@ -41,25 +41,22 @@ function Profile({ user, preferences, onPreferencesChange, onBack, onLogout, onC
   }
 
   return (
-    <section className="tool-page profile-page">
+    <section className="tool-page profile-page profile-redesign">
       <button className="back-button" type="button" onClick={onBack}>← Back to Dashboard</button>
-      <div className="tool-page-header"><div><h1>Profile & Settings</h1><p>Personalize your account and study experience.</p></div></div>
+      <header className="profile-overview"><div className="profile-monogram" aria-hidden="true">{(user.user_metadata?.display_name || user.email || "S").charAt(0).toUpperCase()}</div><div><h1>Your profile</h1><p>{user.email}</p></div></header>
 
-      <div className="profile-card profile-settings-card">
-        <div className="profile-section">
+      <div className="profile-layout">
+        <section className="profile-panel">
           <h2>Account details</h2>
-          <div className="profile-identity">
-            <div className="avatar">{user.email?.charAt(0).toUpperCase()}</div>
-            <div><strong>{displayName || "Student"}</strong><p>{user.email}</p></div>
-          </div>
+          <p className="panel-description">Choose the name shown in your workspace.</p>
           <form className="auth-form" onSubmit={saveProfile}>
             <div className="auth-field"><label htmlFor="display-name">Display name</label>
               <input id="display-name" value={displayName} maxLength="50" onChange={(event) => setDisplayName(event.target.value)} required /></div>
             <button className="auth-submit" type="submit" disabled={savingProfile}>{savingProfile ? "Saving..." : "Save profile"}</button>
           </form>
-        </div>
+        </section>
 
-        <div className="profile-section">
+        <section className="profile-panel">
           <h2>Study defaults</h2>
           <div className="profile-settings-row">
             <div className="auth-field"><label htmlFor="default-subject">Default subject</label>
@@ -72,28 +69,28 @@ function Profile({ user, preferences, onPreferencesChange, onBack, onLogout, onC
               </select></div>
           </div>
           <p className="profile-help">New chats will begin with these choices.</p>
-        </div>
+        </section>
 
-        <div className="profile-section profile-security-section">
-          <h2>Security</h2>
-          <button className="profile-secondary-button" type="button" onClick={onChangePassword}>
+        <section className="profile-panel profile-access">
+          <h2>Account access</h2><p className="panel-description">Manage your password or sign out of this device.</p>
+          <button className="profile-action-row" type="button" onClick={onChangePassword}>
             Change password →
           </button>
-          <button className="logout-button" type="button" onClick={handleLogout} disabled={loggingOut}>⇥ {loggingOut ? "Logging out..." : "Log out"}</button>
-        </div>
+          <button className="profile-action-row profile-signout" type="button" onClick={handleLogout} disabled={loggingOut}>⇥ {loggingOut ? "Logging out..." : "Log out"}</button>
+        </section>
 
         {isAdmin && (
-          <div className="profile-section">
+          <section className="profile-panel">
             <h2>Administration</h2>
             <p className="profile-help">Monitor system totals and manage background jobs.</p>
-            <button className="profile-secondary-button" type="button" onClick={onOpenAdmin}>
+            <button className="profile-action-row" type="button" onClick={onOpenAdmin}>
               Open admin dashboard →
             </button>
-          </div>
+          </section>
         )}
       </div>
-      {message && <p className="profile-success">{message}</p>}
-      {error && <p className="auth-error">Error: {error}</p>}
+      {message && <p className="profile-success" role="status">{message}</p>}
+      {error && <p className="auth-error" role="alert">Error: {error}</p>}
     </section>
   );
 }

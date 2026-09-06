@@ -95,3 +95,50 @@ button.delete-action:hover { color:#a41c2d; background:#fff0f1; }
 .answer-report button + button { margin-left:8px; }
 .quiz-hint { margin-top:14px; padding:12px; border-radius:10px; background:#faf8ff; }
 @media(max-width:650px){ .study-next {margin:18px 14px;padding:18px;} }
+
+/* Profile, home continuation and saved-card navigation. */
+.profile-redesign { max-width:1180px; }
+.profile-overview { display:flex; gap:22px; align-items:center; padding:30px 0 34px; border-bottom:1px solid #e6e2ef; margin-bottom:28px; }
+.profile-monogram { display:grid; place-items:center; width:76px; height:76px; flex-shrink:0; border-radius:24px; background:#ede9ff; color:#5945d5; font-size:30px; font-weight:700; }
+.profile-overview > div { min-width:0; }
+.profile-overview h1 { margin:0 0 8px; font-size:32px; letter-spacing:-.8px; }
+.profile-overview p { margin:0; color:#777187; overflow-wrap:anywhere; }
+.profile-layout { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px; }
+.profile-panel { min-width:0; padding:28px; background:white; border:1px solid #e8e3f1; border-radius:18px; box-shadow:0 4px 18px #29203d04; }
+.profile-panel h2 { margin:0 0 10px; font-size:18px; color:#292338; }
+.profile-panel .panel-description, .profile-panel .profile-help { margin:0 0 24px; color:#7b7489; font-size:13px; line-height:1.7; }
+.profile-panel .profile-help { margin:16px 0 0; }
+.profile-panel .profile-settings-row { grid-template-columns:1fr; gap:18px; margin-top:24px; }
+.profile-panel .auth-submit { align-self:flex-start; width:auto; min-height:44px; padding:11px 22px; margin-top:4px; }
+.profile-panel select { width:100%; min-height:46px; padding:10px 12px; border:1px solid #ded8ec; border-radius:10px; background:white; font:inherit; color:#393047; }
+.profile-action-row { display:flex; align-items:center; justify-content:space-between; width:100%; padding:16px 0; border:0; border-bottom:1px solid #eeeaf5; background:transparent; color:#5945c8; font:inherit; font-size:14px; font-weight:600; text-align:left; cursor:pointer; }
+.profile-action-row:last-child { border-bottom:0; }
+.profile-action-row:hover { color:#38258f; }
+.profile-signout, .profile-signout:hover { color:#bd3242; }
+.study-resume { width:calc(100% - 76px); max-width:1320px; margin:32px auto 36px; }
+.resume-heading { margin-bottom:20px; }
+.resume-heading h2 { margin:0 0 8px; font-size:22px; color:#292338; letter-spacing:-.4px; }
+.resume-heading p { margin:0; color:#81798e; font-size:14px; line-height:1.6; }
+.resume-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+.resume-card { display:flex; align-items:center; gap:16px; min-width:0; padding:22px; border:1px solid #e6e0f0; border-radius:16px; background:#fff; font:inherit; text-align:left; cursor:pointer; transition:border-color .15s,background .15s; }
+.resume-card:hover { background:#fcfaff; border-color:#bfb0eb; }
+.resume-icon { display:grid; place-items:center; width:46px; height:46px; flex-shrink:0; border-radius:13px; background:#f1edff; color:#6a50c6; }
+.resume-copy { display:grid; gap:6px; min-width:0; flex:1; }
+.resume-copy strong { font-size:14px; color:#352d46; font-weight:650; }
+.resume-copy > span { font-size:12px; color:#877f93; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.resume-arrow { color:#9a8aad; }
+.practice-panel { margin-top:28px; padding:26px; border:1px solid #e6e0f0; border-radius:18px; background:#fff; }
+.practice-topics { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; }
+.practice-topic { padding:18px; background:#faf8ff; border:1px solid #eee8f7; border-radius:12px; min-width:0; }
+.practice-topic-copy > span { font-size:12px; color:#76628f; }
+.practice-topic h3 { margin:10px 0; font-size:16px; line-height:1.4; overflow-wrap:anywhere; }
+.practice-topic p { font-size:12px; color:#887d95; }
+.practice-topic button, .practice-empty button, .review-due-button { min-height:40px; padding:9px 14px; border:1px solid #dcd1f3; border-radius:9px; background:#fff; color:#6346b6; font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
+.practice-topic button { margin-top:8px; }
+.practice-topic button:hover, .practice-empty button:hover, .review-due-button:hover { background:#f1ebff; }
+.practice-empty { padding:18px 0 0; color:#81778e; font-size:14px; }
+.saved-review-actions { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+.saved-flashcards-header { gap:18px; flex-wrap:wrap; }
+@media(max-width:1000px) { .practice-topics {grid-template-columns:1fr;} .practice-topic {display:flex; align-items:center; justify-content:space-between; gap:16px;} .practice-topic button {flex-shrink:0;} }
+@media(max-width:800px) { .profile-layout {grid-template-columns:1fr;} .study-resume {width:calc(100% - 36px);} .resume-grid {grid-template-columns:1fr;} }
+@media(max-width:650px) { .profile-overview {padding:12px 0 24px; gap:16px;} .profile-overview h1 {font-size:26px;} .profile-monogram {width:60px;height:60px;border-radius:18px;} .profile-panel {padding:22px;} .practice-panel {padding:20px;} .resume-card {padding:18px;} .practice-topic {flex-wrap:wrap;} .profile-overview p {font-size:13px;} }
