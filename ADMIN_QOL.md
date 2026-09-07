@@ -2,7 +2,7 @@
 
 Find upgrades under Admin > Users:
 - Account status filters, email/recent-sign-in sorting, clear filters and last refreshed time.
-- CSV export of the currently shown users, with formula-like cells escaped for spreadsheets.
+- CSV export has been removed in the review queue update.
 - Copy email inside each three-dot menu.
 - End existing registered Study AI sessions for a member, with on-screen confirmation. Study data is preserved. The member must log in again at the next app request/heartbeat. This affects app_sessions only, not every Supabase Auth session. Admin accounts and your own account are protected server-side. Audit event appears in the existing recent server logs (not a persistent audit archive).
 

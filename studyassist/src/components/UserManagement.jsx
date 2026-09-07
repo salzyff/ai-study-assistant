@@ -1,4 +1,3 @@
-import { usersCsv } from "../utils/adminExport";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiRequest } from "../api";
 import DeleteConfirmation from "./DeleteConfirmation";
@@ -71,11 +70,6 @@ function UserManagement({ accessToken }) {
     return result;
   }, [search, users, roleFilter, statusFilter, sort]);
 
-  function exportUsers() {
-    const url = URL.createObjectURL(new Blob(["\uFEFF", usersCsv(visibleUsers)], { type: "text/csv;charset=utf-8" }));
-    const link = document.createElement("a"); link.href = url; link.download = "study-ai-users-page.csv";
-    link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }
   async function endSessions(user) {
     if (busyUser) return;
     setBusyUser(user.id); setError(""); setMessage("");
@@ -112,7 +106,7 @@ function UserManagement({ accessToken }) {
   async function deleteUser(userId) {
     await apiRequest(`/api/admin/users/${userId}`, { accessToken, method: "DELETE" });
     setMessage("User deleted.");
-    await loadUsers(offset);
+    await loadUsers(users.length === 1 ? Math.max(0, offset - PAGE_SIZE) : offset);
   }
 
   async function promoteUser(user) {
@@ -175,14 +169,13 @@ function UserManagement({ accessToken }) {
           />
           <select aria-label="Filter account status on this page" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}><option value="all">All statuses</option><option value="active">Active</option><option value="suspended">Suspended</option><option value="unconfirmed">Unconfirmed</option></select>
           <select aria-label="Sort this page" value={sort} onChange={e => setSort(e.target.value)}><option value="default">Default order</option><option value="email">Email A–Z</option><option value="recent">Recent sign-in</option></select>
-          <button type="button" disabled={loading || !visibleUsers.length} onClick={exportUsers}>Export shown users</button>
           <button type="button" onClick={() => { setSearch(""); setRoleFilter("all"); setStatusFilter("all"); setSort("default"); }}>Clear filters</button>
           <button type="button" onClick={() => loadUsers(offset)} disabled={loading}>↻ Refresh</button>
         </div>
       </div>
 
-      <p className="admin-list-summary" role="status">{visibleUsers.length} matching users on this page{updatedAt ? ` · Updated ${updatedAt.toLocaleTimeString()}` : ""}. Filters and export apply to the current page.</p>
-      {message && <div className="operations-success">{message}</div>}
+      <p className="admin-list-summary" role="status">{visibleUsers.length} matching users on this page{updatedAt ? ` · Updated ${updatedAt.toLocaleTimeString()}` : ""}. Filters apply to the current page.</p>
+      {message && <div className="operations-success" role="status">{message}<button type="button" className="admin-dismiss-notice" aria-label="Dismiss notification" onClick={() => setMessage("")}>×</button></div>}
       {error && <div className="operations-error" role="alert">{error}</div>}
 
       <div className="admin-table-wrap">
