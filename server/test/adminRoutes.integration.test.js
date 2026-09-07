@@ -20,6 +20,7 @@ test("admin routes enforce access, validate filters and limits, protect owner", 
     const query = { select() { return this; }, eq(...args) { filters.push(args); return this; }, order() { return this; }, range() { return Promise.resolve({ data: rows, count: rows.length, error: null }); } };
     return query;
   };
+  const mockFrom = supabase.from;
   const app = express();
   app.use(express.json());
   app.use((req, _res, next) => { req.user = { id: req.headers["x-own"] ? id : "another-admin", app_metadata: { role: req.headers["x-role"] || "member" } }; next(); });
@@ -27,7 +28,15 @@ test("admin routes enforce access, validate filters and limits, protect owner", 
   const server = app.listen(0, "127.0.0.1");
   await new Promise((resolve) => server.once("listening", resolve));
   const call = (path, body, role = "admin", own = false) => fetch(`http://127.0.0.1:${server.address().port}${path}`, { method: body === undefined ? "GET" : "PATCH", headers: { "content-type": "application/json", "x-role": role, ...(own ? { "x-own": "1" } : {}) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
+  const endSessions = (role = "admin") => fetch(`http://127.0.0.1:${server.address().port}/users/${id}/end-sessions`, {method:"POST",headers:{"x-role":role}});
   try {
+    assert.equal((await endSessions("member")).status,403);
+    assert.equal((await endSessions()).status,403);
+    supabase.auth.admin.getUserById = async () => ({data:{user:{id,email:"member@example.com",app_metadata:{}}},error:null});
+    supabase.from = table => { assert.equal(table,"app_sessions"); return {update(value){assert.deepEqual(value,{expired:true});return {eq:async(key,value)=>{assert.equal(key,"user_id");assert.equal(value,id);return {error:null};}};}};};
+    assert.equal((await endSessions()).status,200);
+    supabase.auth.admin.getUserById = async () => ({ data: { user: { id, email: "owner@example.com", app_metadata: {} } }, error: null });
+    supabase.from = mockFrom;
     assert.equal((await call("/activity", undefined, "member")).status, 403);
     assert.equal((await call(`/users/${id}/limit`, { limit: 100 }, "member")).status, 403);
     assert.equal((await call("/jobs?status=invalid")).status, 400);

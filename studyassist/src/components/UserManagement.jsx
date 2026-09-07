@@ -1,3 +1,4 @@
+import { usersCsv } from "../utils/adminExport";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiRequest } from "../api";
 import DeleteConfirmation from "./DeleteConfirmation";
@@ -16,6 +17,10 @@ function isSuspended(user) {
 }
 
 function UserManagement({ accessToken }) {
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sort, setSort] = useState("default");
+  const [updatedAt, setUpdatedAt] = useState(null);
+  const [endSessionsId, setEndSessionsId] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
   const requestVersion = useRef(0);
   const [roleFilter, setRoleFilter] = useState("all");
@@ -38,6 +43,7 @@ function UserManagement({ accessToken }) {
       const data = await apiRequest(`/api/admin/users?limit=${PAGE_SIZE}&offset=${nextOffset}`, { accessToken });
       if (version !== requestVersion.current) return;
       setUsers(data.users || []);
+      setUpdatedAt(new Date());
       setPagination(data.pagination || null);
       setOffset(nextOffset);
     } catch (requestError) {
@@ -54,12 +60,34 @@ function UserManagement({ accessToken }) {
 
   const visibleUsers = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return users.filter((user) =>
+    const result = users.filter((user) =>
+      (statusFilter === "all" || (statusFilter === "suspended" ? isSuspended(user) : statusFilter === "unconfirmed" ? !user.emailConfirmedAt && !isSuspended(user) : Boolean(user.emailConfirmedAt) && !isSuspended(user))) &&
       (roleFilter === "all" || (roleFilter === "admin" ? user.isAdmin : !user.isAdmin)) &&
       (!query || user.email?.toLowerCase().includes(query)
       || user.displayName?.toLowerCase().includes(query)),
     );
-  }, [search, users, roleFilter]);
+    if (sort === "email") result.sort((a,b) => (a.email || "").localeCompare(b.email || ""));
+    if (sort === "recent") result.sort((a,b) => (Date.parse(b.lastSignInAt) || 0) - (Date.parse(a.lastSignInAt) || 0));
+    return result;
+  }, [search, users, roleFilter, statusFilter, sort]);
+
+  function exportUsers() {
+    const url = URL.createObjectURL(new Blob(["\uFEFF", usersCsv(visibleUsers)], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a"); link.href = url; link.download = "study-ai-users-page.csv";
+    link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  async function endSessions(user) {
+    if (busyUser) return;
+    setBusyUser(user.id); setError(""); setMessage("");
+    try {
+      const data = await apiRequest(`/api/admin/users/${user.id}/end-sessions`, { accessToken, method: "POST" });
+      setMessage(data.message); setEndSessionsId("");
+    } catch (e) { setError(e.message); } finally { setBusyUser(""); }
+  }
+  async function copyEmail(email) {
+    try { await navigator.clipboard.writeText(email || ""); setMessage("Email copied."); }
+    catch { setError("Could not copy automatically. Select the email in the table and copy it."); }
+  }
 
   async function changeStatus(user) {
     const suspended = !isSuspended(user);
@@ -145,10 +173,15 @@ function UserManagement({ accessToken }) {
             placeholder="Filter this page…"
             aria-label="Filter users on this page"
           />
+          <select aria-label="Filter account status on this page" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}><option value="all">All statuses</option><option value="active">Active</option><option value="suspended">Suspended</option><option value="unconfirmed">Unconfirmed</option></select>
+          <select aria-label="Sort this page" value={sort} onChange={e => setSort(e.target.value)}><option value="default">Default order</option><option value="email">Email A–Z</option><option value="recent">Recent sign-in</option></select>
+          <button type="button" disabled={loading || !visibleUsers.length} onClick={exportUsers}>Export shown users</button>
+          <button type="button" onClick={() => { setSearch(""); setRoleFilter("all"); setStatusFilter("all"); setSort("default"); }}>Clear filters</button>
           <button type="button" onClick={() => loadUsers(offset)} disabled={loading}>↻ Refresh</button>
         </div>
       </div>
 
+      <p className="admin-list-summary" role="status">{visibleUsers.length} matching users on this page{updatedAt ? ` · Updated ${updatedAt.toLocaleTimeString()}` : ""}. Filters and export apply to the current page.</p>
       {message && <div className="operations-success">{message}</div>}
       {error && <div className="operations-error" role="alert">{error}</div>}
 
@@ -178,6 +211,12 @@ function UserManagement({ accessToken }) {
                   <td>{formatDate(user.lastSignInAt)}</td>
                   <td>
                     <UserActionsMenu email={user.email}>
+                    <button type="button" onClick={() => copyEmail(user.email)}>Copy email</button>
+                    {!protectedAccount && !user.isAdmin && (endSessionsId === user.id ? <div className="admin-session-confirm" role="group" aria-label="Confirm ending sessions">
+                      <p>End {user.email}’s existing app sessions? Their study data stays saved.</p>
+                      <button type="button" disabled={Boolean(busyUser)} onClick={() => endSessions(user)}>Confirm sign-out</button>
+                      <button type="button" disabled={Boolean(busyUser)} onClick={() => setEndSessionsId("")}>Cancel</button>
+                    </div> : <button type="button" disabled={Boolean(busyUser)} onClick={() => setEndSessionsId(user.id)}>End app sessions</button>)}
                     <button type="button" onClick={() => setSelectedUser(user)}>Activity &amp; AI allowance</button>
                     {protectedAccount ? (
                       <span className="protected-account">

@@ -234,3 +234,9 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline:3px 
  .profile-overview { align-items:flex-start; }
  .resume-card, .practice-panel, .profile-panel { border-radius:14px; }
 }
+
+.admin-list-summary {color:#70677e;font-size:13px;line-height:1.6;margin:16px 0;}
+.user-toolbar-actions {display:flex;flex-wrap:wrap;gap:10px;}
+.user-toolbar-actions select {min-height:42px;border:1px solid #e6e0f0;border-radius:9px;padding:8px 12px;background:white;color:#493e60;}
+.admin-session-confirm {padding:12px;background:#f8f5ff;border-radius:10px;font-size:13px;}
+.admin-session-confirm button {margin:6px 6px 0 0;}

@@ -160,6 +160,21 @@ async function getManageableUser(userId, currentUserId) {
   return { target };
 }
 
+// End registered Study AI sessions without deleting the account or study data.
+router.post("/users/:userId/end-sessions", async (req, res) => {
+  try {
+    const userId = uuidField(req.params.userId, "userId");
+    const manageable = await getManageableUser(userId, req.user.id);
+    if (manageable.error) return res.status(manageable.status).json({ error: manageable.error });
+    const { error } = await supabase.from("app_sessions").update({ expired: true }).eq("user_id", userId);
+    if (error) throw error;
+    logger.info("admin_app_sessions_ended", { adminUserId: req.user.id, targetUserId: userId });
+    res.json({ message: "Existing Study AI sessions ended. The member must sign in again on their next app request." });
+  } catch (error) {
+    res.status(error instanceof RequestValidationError ? 400 : 500).json({ error: error instanceof RequestValidationError ? error.message : "Could not end app sessions" });
+  }
+});
+
 router.patch("/users/:userId/role", async (req, res) => {
   try {
     const userId = uuidField(req.params.userId, "userId");
