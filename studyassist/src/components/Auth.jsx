@@ -2,7 +2,7 @@ import { useState } from "react";
 import { supabase } from "../supabase";
 import PasswordEye from "./PasswordEye";
 
-function Auth() {
+function Auth({ onBack }) {
   const [authMode, setAuthMode] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -89,6 +89,8 @@ function Auth() {
   return (
     <main className="auth-container">
       <div className="auth-card">
+
+        {onBack && <button className="auth-back" type="button" onClick={onBack}>← Back to Study AI</button>}
 
         <div className="auth-logo">🧠</div>
 

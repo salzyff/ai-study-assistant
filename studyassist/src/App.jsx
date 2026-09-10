@@ -21,10 +21,16 @@ import ChangePassword from "./components/ChangePassword";
 import WeeklyReports from "./components/WeeklyReports";
 import AdminDashboard from "./components/AdminDashboard";
 import UserManagement from "./components/UserManagement";
+import LandingPage from "./components/LandingPage";
+import "./components/LandingPage.css";
 import { SUBJECTS } from "./constants/subjects";
 import { apiRequest, streamApiRequest } from "./api";
 
 const STUDY_MODES = ["ask", "explain", "summarize", "practice"];
+
+function currentPath() {
+  return window.location.pathname.replace(/\/+$/, "") || "/";
+}
 
 function loadPreferences() {
   const defaults = { defaultSubject: "General", defaultMode: "ask" };
@@ -45,6 +51,7 @@ function loadPreferences() {
 }
 
 function App() {
+  const [path, setPath] = useState(currentPath);
   const [preferences, setPreferences] = useState(loadPreferences);
   const [session, setSession] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -70,6 +77,19 @@ function App() {
   const navigationRequest = useRef(0);
 
   const accessToken = session?.access_token;
+
+  useEffect(() => {
+    const syncPath = () => setPath(currentPath());
+    window.addEventListener("popstate", syncPath);
+    return () => window.removeEventListener("popstate", syncPath);
+  }, []);
+
+  function navigate(pathname) {
+    if (currentPath() === pathname) return;
+    window.history.pushState({}, "", pathname);
+    setPath(pathname);
+    window.scrollTo(0, 0);
+  }
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -374,7 +394,11 @@ function App() {
   }
 
   if (!session) {
-    return <Auth />;
+    return path === "/" ? (
+      <LandingPage onOpenLogin={() => navigate("/login")} />
+    ) : (
+      <Auth onBack={() => navigate("/")} />
+    );
   }
 
   return (

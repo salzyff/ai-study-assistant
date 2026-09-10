@@ -42,6 +42,7 @@
   }
   
   .auth-card {
+    position: relative;
     width: 100%;
     max-width: 430px;
     padding: 42px;
@@ -51,6 +52,20 @@
     box-shadow: 0 25px 70px rgba(15, 23, 42, 0.12);
     text-align: center;
   }
+
+  .auth-back {
+    position: absolute;
+    top: 17px;
+    left: 17px;
+    border: 0;
+    background: transparent;
+    color: #6b5a93;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .auth-back:hover { color: #4f46e5; }
   
   .auth-logo {
     width: 68px;

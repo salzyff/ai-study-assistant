@@ -102,9 +102,10 @@ function AdminDashboard({ accessToken }) {
   }
 
   const cards = overview ? [
-    ["👥", "Users", overview.users],
+    ["👥", "Students enrolled", `${overview.users}/${overview.seatLimit}`],
+    ["✉️", "Confirmed accounts", overview.confirmedUsers],
+    ["🟢", "Active this week", overview.activeUsersLast7Days],
     ["💬", "Conversations", overview.conversations],
-    ["✅", "Tasks", overview.tasks],
     ["🤖", "AI requests (24h)", overview.aiRequestsLast24Hours],
     ["⚠️", "Failed jobs", overview.failedJobs],
   ] : [];
@@ -142,7 +143,10 @@ function AdminDashboard({ accessToken }) {
               </div>
             ))}
           </div>
-          <div className="admin-guide"><h3>Account support</h3><p>Review AI activity, change daily allowances, and manage account access from Users.</p><button type="button" onClick={() => setSection("Users")}>Open users →</button><h3>Service operations</h3><p>Inspect failed reports, retry jobs and review recent server events.</p><button type="button" onClick={() => setSection("Jobs")}>Inspect jobs →</button></div>
+          <div className="admin-guide admin-rollout-guide">
+            <div><small>SCHOOL ROLLOUT</small><h3>{overview.seatsRemaining} of {overview.seatLimit} seats still available</h3><p>{overview.confirmedUsers} confirmed accounts, {overview.activeUsersLast7Days} students active in the past 7 days, and {overview.administrators} administrator{overview.administrators === 1 ? "" : "s"}.</p><button type="button" onClick={() => setSection("Users")}>Manage students →</button></div>
+            <div><small>OPERATIONS</small><h3>Keep the service healthy</h3><p>Review individual AI allowances, investigate activity, and retry only failed background jobs.</p><button type="button" onClick={() => setSection("Jobs")}>Inspect jobs →</button></div>
+          </div>
           </>}
 
           {section === "Jobs" && <>

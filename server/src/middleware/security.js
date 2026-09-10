@@ -1,4 +1,9 @@
-import { rateLimit } from "express-rate-limit";
+import { ipKeyGenerator, rateLimit } from "express-rate-limit";
+
+function positiveIntegerEnv(name, fallback, { min = 1, max = 100000 } = {}) {
+  const value = Number.parseInt(process.env[name], 10);
+  return Number.isInteger(value) && value >= min && value <= max ? value : fallback;
+}
 
 const allowedOrigins = (
   process.env.CLIENT_URLS || "http://localhost:5173"
@@ -27,7 +32,10 @@ export const corsOptions = {
 
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 300,
+  // A school can have many students behind the same Wi-Fi address.
+  // This protects the API without treating the whole school as one person.
+  limit: positiveIntegerEnv("API_RATE_LIMIT", 1500),
+  keyGenerator: (req) => ipKeyGenerator(req.ip),
   standardHeaders: "draft-8",
   legacyHeaders: false,
 
@@ -38,7 +46,9 @@ export const apiLimiter = rateLimit({
 
 export const aiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 30,
+  // This middleware runs after requireAuth, so each student has their own limit.
+  limit: positiveIntegerEnv("AI_WINDOW_LIMIT", 12, { max: 120 }),
+  keyGenerator: (req) => req.user?.id || ipKeyGenerator(req.ip),
   standardHeaders: "draft-8",
   legacyHeaders: false,
 

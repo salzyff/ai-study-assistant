@@ -81,8 +81,12 @@ router.patch("/users/:userId/limit", async (req, res) => {
 router.get("/overview", async (_req, res) => {
   try {
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const activeSince = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const seatLimit = Number.isInteger(Number.parseInt(process.env.SCHOOL_SEAT_LIMIT, 10))
+      ? Math.max(1, Math.min(10000, Number.parseInt(process.env.SCHOOL_SEAT_LIMIT, 10)))
+      : 100;
     const [users, conversations, tasks, aiToday, failedJobs] = await Promise.all([
-      supabase.auth.admin.listUsers({ page: 1, perPage: 1 }),
+      supabase.auth.admin.listUsers({ page: 1, perPage: 1000 }),
       supabase.from("conversations").select("id", { count: "exact", head: true }),
       supabase.from("tasks").select("id", { count: "exact", head: true }),
       supabase.from("ai_usage").select("id", { count: "exact", head: true }).gte("created_at", since),
@@ -91,9 +95,19 @@ router.get("/overview", async (_req, res) => {
     const databaseError = [conversations, tasks, aiToday, failedJobs].find((item) => item.error)?.error;
     if (users.error) throw users.error;
     if (databaseError) throw databaseError;
+    const allUsers = users.data.users || [];
+    const confirmedUsers = allUsers.filter((user) => user.email_confirmed_at).length;
+    const activeUsersLast7Days = allUsers.filter((user) => user.last_sign_in_at && user.last_sign_in_at >= activeSince).length;
+    const administrators = allUsers.filter((user) => isAdminUser(user)).length;
+    const userCount = users.data.total ?? allUsers.length;
     res.json({
       generatedAt: new Date().toISOString(),
-      users: users.data.total ?? users.data.users.length,
+      users: userCount,
+      seatLimit,
+      seatsRemaining: Math.max(0, seatLimit - userCount),
+      confirmedUsers,
+      activeUsersLast7Days,
+      administrators,
       conversations: conversations.count || 0,
       tasks: tasks.count || 0,
       aiRequestsLast24Hours: aiToday.count || 0,

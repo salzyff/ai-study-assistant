@@ -24,6 +24,7 @@ import {
   apiLimiter,
   aiLimiter,
 } from "./middleware/security.js";
+import { aiConcurrencyLimiter } from "./middleware/aiConcurrency.js";
 import {
   dailyAiLimit,
   getAiUsage,
@@ -114,23 +115,28 @@ app.get("/", (req, res) => {
   });
 });
 
+// Safe for Render health checks and does not expose credentials or user data.
+app.get("/health", (_req, res) => {
+  res.status(200).json({ status: "ok", service: "study-ai-api", timestamp: new Date().toISOString() });
+});
+
 // Every route beginning with /api now requires login
 app.use("/api", apiLimiter);
 app.use("/api", requireAuth);
 app.post("/api/session/heartbeat", (req, res) => res.json({ active: true }));
 
 // Gemini-powered routes have stricter limits.
-app.use("/api/chat", aiLimiter, dailyAiLimit);
-app.use("/api/study-plans", aiLimiter, dailyAiLimit);
-app.use("/api/quizzes/generate", aiLimiter, dailyAiLimit);
-app.use("/api/study-upgrades/hint", aiLimiter);
-app.use("/api/tasks/:taskId/study-session", aiLimiter, dailyAiLimit);
-app.use("/api/notes/:noteId/ask", aiLimiter);
-app.use("/api/notes/:noteId/summarize", aiLimiter);
-app.use("/api/flashcards/generate", aiLimiter);
-app.use("/api/learning/teach-back", aiLimiter, dailyAiLimit);
-app.use("/api/learning/mark-written", aiLimiter, dailyAiLimit);
-app.use("/api/question-bank/generate", aiLimiter, dailyAiLimit);
+app.use("/api/chat", aiLimiter, aiConcurrencyLimiter, dailyAiLimit);
+app.use("/api/study-plans", aiLimiter, aiConcurrencyLimiter, dailyAiLimit);
+app.use("/api/quizzes/generate", aiLimiter, aiConcurrencyLimiter, dailyAiLimit);
+app.use("/api/study-upgrades/hint", aiLimiter, aiConcurrencyLimiter);
+app.use("/api/tasks/:taskId/study-session", aiLimiter, aiConcurrencyLimiter, dailyAiLimit);
+app.use("/api/notes/:noteId/ask", aiLimiter, aiConcurrencyLimiter);
+app.use("/api/notes/:noteId/summarize", aiLimiter, aiConcurrencyLimiter);
+app.use("/api/flashcards/generate", aiLimiter, aiConcurrencyLimiter);
+app.use("/api/learning/teach-back", aiLimiter, aiConcurrencyLimiter, dailyAiLimit);
+app.use("/api/learning/mark-written", aiLimiter, aiConcurrencyLimiter, dailyAiLimit);
+app.use("/api/question-bank/generate", aiLimiter, aiConcurrencyLimiter, dailyAiLimit);
 
 // Create or continue a conversation
 app.post("/api/chat", async (req, res) => {
