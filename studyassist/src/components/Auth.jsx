@@ -2,8 +2,8 @@ import { useState } from "react";
 import { supabase } from "../supabase";
 import PasswordEye from "./PasswordEye";
 
-function Auth({ onBack }) {
-  const [authMode, setAuthMode] = useState("login");
+function Auth({ onBack, authMode = "login", onNavigate }) {
+  const setAuthMode = (mode) => onNavigate(mode === "signup" ? "/register" : mode === "forgot" ? "/forgot-password" : "/login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");

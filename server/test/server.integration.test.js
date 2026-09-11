@@ -42,3 +42,43 @@ test("CORS rejects unapproved websites", async () => {
   assert.equal(response.status, 403);
   assert.equal((await response.json()).error, "This website is not allowed to access the API");
 });
+
+test("direct chat URLs load metadata only for the authenticated owner", async () => {
+  const { supabase } = await import("../src/supabase.js");
+  const originals = { getUser: supabase.auth.getUser, rpc: supabase.rpc, from: supabase.from };
+  const uid = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", sid = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+  const cid = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+  const token = `h.${Buffer.from(JSON.stringify({ sub: uid, session_id: sid })).toString("base64url")}.s`;
+  const conversation = { id: cid, subject: "Biology", mode: "explain" };
+  let owned = true, messagesRead = 0;
+  supabase.auth.getUser = async () => ({ data: { user: { id: uid } }, error: null });
+  supabase.rpc = async () => ({ data: true, error: null });
+  supabase.from = (table) => {
+    const filters = [];
+    return {
+      select() { return this; },
+      eq(...filter) { filters.push(filter); return this; },
+      async maybeSingle() {
+        assert.equal(table, "conversations");
+        assert.deepEqual(filters, [["id", cid], ["user_id", uid]]);
+        return { data: owned ? conversation : null, error: null };
+      },
+      async order() {
+        assert.equal(table, "messages"); messagesRead++;
+        assert.deepEqual(filters, [["conversation_id", cid]]);
+        return { data: [{ role: "assistant", content: "Owner's answer" }], error: null };
+      },
+    };
+  };
+  try {
+    const url = `${baseUrl}/api/conversations/${cid}/messages`;
+    const headers = { Authorization: `Bearer ${token}` };
+    const response = await fetch(url, { headers });
+    assert.equal(response.status, 200); assert.deepEqual((await response.json()).conversation, conversation);
+    owned = false;
+    const denied = await fetch(url, { headers });
+    assert.equal(denied.status, 404); assert.equal(messagesRead, 1);
+  } finally {
+    supabase.auth.getUser = originals.getUser; supabase.rpc = originals.rpc; supabase.from = originals.from;
+  }
+});

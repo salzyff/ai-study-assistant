@@ -473,7 +473,7 @@ app.get(
         error: conversationError,
       } = await supabase
         .from("conversations")
-        .select("id")
+        .select("id, subject, mode")
         .eq("id", sessionId)
         .eq("user_id", req.user.id)
         .maybeSingle();
@@ -500,6 +500,7 @@ app.get(
 
       res.json({
         sessionId: conversation.id,
+        conversation,
         messages: data,
       });
     } catch (error) {

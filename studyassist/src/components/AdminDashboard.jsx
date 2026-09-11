@@ -4,6 +4,7 @@ import UserManagement from "./UserManagement";
 import AdminActivity from "./AdminActivity";
 import "./admin.css";
 import { apiRequest } from "../api";
+import { ADMIN_SECTIONS } from "../utils/routes";
 
 const PAGE_SIZE = 10;
 
@@ -12,8 +13,8 @@ function dateLabel(value) {
   return new Date(value).toLocaleString();
 }
 
-function AdminDashboard({ accessToken }) {
-  const [section, setSection] = useState("Overview");
+function AdminDashboard({ accessToken, section = "Overview", onNavigate }) {
+  const setSection = (name) => onNavigate(ADMIN_SECTIONS[name]);
   const [statusFilter, setStatusFilter] = useState("all");
   const [levelFilter, setLevelFilter] = useState("all");
   const [confirmation, setConfirmation] = useState(null);
@@ -114,7 +115,7 @@ function AdminDashboard({ accessToken }) {
     <div className="operations-page admin-console">
       <div className="admin-banner"><small>STUDY AI / ADMINISTRATION</small><h2>Your control centre</h2><p>Accounts, allowances and service operations in one workspace.</p></div>
       <nav className="admin-nav" aria-label="Administration">{["Overview", "Users", "Activity", "Answer reports", "Jobs", "Server events"].map((name) => <button type="button" key={name} disabled={Boolean(busyJob)} aria-current={section === name ? "page" : undefined} onClick={() => { setSection(name); setConfirmation(null); }}>{name}</button>)}</nav>
-      {section === "Answer reports" ? <AnswerReportsAdmin accessToken={accessToken} /> : section === "Users" ? <UserManagement accessToken={accessToken} /> : section === "Activity" ? <AdminActivity accessToken={accessToken} /> : <>
+      {section === "Answer reports" ? <AnswerReportsAdmin accessToken={accessToken} /> : section === "Users" ? <UserManagement accessToken={accessToken} onUsersChanged={() => loadAdminData(0)} /> : section === "Activity" ? <AdminActivity accessToken={accessToken} /> : <>
       <div className="operations-toolbar">
         <div>
           <h2>{section}</h2>
@@ -135,7 +136,8 @@ function AdminDashboard({ accessToken }) {
         <div className="operations-empty">Loading system information…</div>
       ) : (
         <>
-          {section === "Overview" && <>
+          {section === "Overview" && !overview && <p role="status">The overview is unavailable. Use Refresh to try again; the other tabs are still available.</p>}
+          {section === "Overview" && overview && <>
           <div className="admin-stat-grid">
             {cards.map(([icon, label, value]) => (
               <div className="admin-stat-card" key={label}>

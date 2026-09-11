@@ -11,6 +11,7 @@ export function createRequireAuth(client) {
       if (token.length > 16384) return deny();
       const { data, error } = await client.auth.getUser(token);
       if (error || !data?.user) return deny();
+      if (data.user.deleted_at || (data.user.banned_until && Date.parse(data.user.banned_until) > Date.now())) return deny();
       // Decode only AFTER Supabase verifies the token. Never authorize using an unverified JWT.
       let claims;
       try { claims = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString()); } catch { return deny(); }

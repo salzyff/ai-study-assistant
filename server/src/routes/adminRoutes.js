@@ -6,6 +6,7 @@ import { paginationResult, parsePagination } from "../utils/pagination.js";
 import { RequestValidationError, uuidField, enumField } from "../utils/validation.js";
 import { runBackgroundJobsOnce } from "../services/backgroundJobs.js";
 import { getRecentLogs, logger } from "../utils/logger.js";
+import { adminUserSummary, userNotFound } from "../utils/adminUsers.js";
 
 const router = express.Router();
 
@@ -24,12 +25,13 @@ router.get("/activity", async (req, res) => {
     if (req.query.userId) query = query.eq("user_id", uuidField(req.query.userId, "userId"));
     const { data, error, count } = await query.order("created_at", { ascending: false }).order("id", { ascending: false }).range(pagination.from, pagination.to);
     if (error) throw error;
-    const emails = new Map(await Promise.all([...new Set(data.map((event) => event.user_id))].map(async (id) => {
+    const rows = data || [];
+    const emails = new Map(await Promise.all([...new Set(rows.map((event) => event.user_id))].map(async (id) => {
       const result = await supabase.auth.admin.getUserById(id);
-      if (result.error && result.error.status !== 404) throw result.error;
-      return [id, result.data?.user?.email || null];
+      if (result.error && !userNotFound(result.error)) throw result.error;
+      return [id, result.data?.user?.deleted_at ? null : result.data?.user?.email || null];
     })));
-    res.json({ events: data.map((event) => ({ ...event, email: emails.get(event.user_id) })), pagination: paginationResult({ ...pagination, count, returned: data.length }) });
+    res.json({ events: rows.map((event) => ({ ...event, email: emails.get(event.user_id) })), pagination: paginationResult({ ...pagination, count, returned: rows.length }) });
   } catch (error) {
     res.status(error instanceof RequestValidationError ? 400 : 500).json({ error: error instanceof RequestValidationError ? error.message : "Could not load activity" });
   }
@@ -61,13 +63,13 @@ router.patch("/users/:userId/limit", async (req, res) => {
       return res.status(400).json({ error: "Limit must be a whole number from 0 to 10000, or null to use the default" });
     }
     const { data: target, error: lookupError } = await supabase.auth.admin.getUserById(userId);
-    if (lookupError) throw lookupError;
-    if (!target.user) return res.status(404).json({ error: "User not found" });
+    if (lookupError && !userNotFound(lookupError)) throw lookupError;
+    if (lookupError || !target?.user || target.user.deleted_at) return res.status(404).json({ error: "Active user not found" });
     if (isEnvironmentAdmin(target.user) && req.user.id !== userId) {
       return res.status(403).json({ error: "Only the original admin can change their own limit" });
     }
     const { error } = await supabase.auth.admin.updateUserById(userId, {
-      app_metadata: { ai_daily_limit: limit },
+      app_metadata: { ...(target.user.app_metadata || {}), ai_daily_limit: limit },
     });
     if (error) throw error;
     logger.info("admin_user_limit_changed", { adminUserId: req.user.id, targetUserId: userId, limit });
@@ -95,11 +97,11 @@ router.get("/overview", async (_req, res) => {
     const databaseError = [conversations, tasks, aiToday, failedJobs].find((item) => item.error)?.error;
     if (users.error) throw users.error;
     if (databaseError) throw databaseError;
-    const allUsers = users.data.users || [];
+    const allUsers = (users.data.users || []).filter((user) => !user.deleted_at);
     const confirmedUsers = allUsers.filter((user) => user.email_confirmed_at).length;
     const activeUsersLast7Days = allUsers.filter((user) => user.last_sign_in_at && user.last_sign_in_at >= activeSince).length;
     const administrators = allUsers.filter((user) => isAdminUser(user)).length;
-    const userCount = users.data.total ?? allUsers.length;
+    const userCount = allUsers.length;
     res.json({
       generatedAt: new Date().toISOString(),
       users: userCount,
@@ -136,18 +138,7 @@ router.get("/users", async (req, res) => {
     });
     if (error) throw error;
 
-    const users = (data.users || []).map((user) => ({
-      id: user.id,
-      email: user.email,
-      displayName: user.user_metadata?.display_name || "Student",
-      createdAt: user.created_at,
-      lastSignInAt: user.last_sign_in_at,
-      emailConfirmedAt: user.email_confirmed_at,
-      bannedUntil: user.banned_until,
-      isAdmin: isAdminUser(user),
-      isEnvironmentAdmin: isEnvironmentAdmin(user),
-      isCurrentUser: user.id === req.user.id,
-    }));
+    const users = (data.users || []).map((user) => adminUserSummary(user, req.user.id));
 
     res.json({
       users,
@@ -166,8 +157,9 @@ router.get("/users", async (req, res) => {
 
 async function getManageableUser(userId, currentUserId) {
   const { data, error } = await supabase.auth.admin.getUserById(userId);
+  if (userNotFound(error)) return { status: 404, error: "User not found" };
   if (error) throw error;
-  const target = data.user;
+  const target = data?.user;
   if (!target) return { status: 404, error: "User not found" };
   const protectionReason = adminUserProtectionReason(target, currentUserId);
   if (protectionReason) return { status: target.id === currentUserId ? 400 : 403, error: protectionReason };
@@ -197,9 +189,9 @@ router.patch("/users/:userId/role", async (req, res) => {
     }
 
     const { data: targetResult, error: targetError } = await supabase.auth.admin.getUserById(userId);
-    if (targetError) throw targetError;
-    const target = targetResult.user;
-    if (!target) return res.status(404).json({ error: "User not found" });
+    if (targetError && !userNotFound(targetError)) throw targetError;
+    const target = targetResult?.user;
+    if (targetError || !target || target.deleted_at) return res.status(404).json({ error: "Active user not found" });
     if (target.id === req.user.id) return res.status(400).json({ error: "You cannot change your own administrator role" });
 
     const promoting = req.body.role === "admin";
@@ -248,6 +240,7 @@ router.patch("/users/:userId/status", async (req, res) => {
 
     const manageable = await getManageableUser(userId, req.user.id);
     if (!manageable.target) return res.status(manageable.status).json({ error: manageable.error });
+    if (manageable.target.deleted_at) return res.status(409).json({ error: "This account was already soft-deleted. Use Permanently remove instead." });
 
     const { data, error } = await supabase.auth.admin.updateUserById(userId, {
       ban_duration: req.body.suspended ? "876000h" : "none",
@@ -273,16 +266,30 @@ router.delete("/users/:userId", async (req, res) => {
   try {
     const userId = uuidField(req.params.userId, "userId");
     const manageable = await getManageableUser(userId, req.user.id);
+    if (manageable.status === 404) return res.json({ id: userId, deleted: true, message: "This account is already deleted." });
     if (!manageable.target) return res.status(manageable.status).json({ error: manageable.error });
 
-    const { error } = await supabase.auth.admin.deleteUser(userId, true);
+    // Fail closed if ownership cascades have not been installed. Never delete
+    // tables one by one: an Auth deletion must roll back if a relation blocks it.
+    const readiness = await supabase.rpc("study_ai_user_deletion_ready");
+    if (readiness.error || readiness.data !== true) {
+      logger.error("admin_user_deletion_schema_unavailable", { code: readiness.error?.code });
+      return res.status(503).json({ code: "DELETION_SETUP_REQUIRED", error: "No account was deleted. Run server/supabase/migrations/007_user_deletion.sql in Supabase, then retry." });
+    }
+    const { error } = await supabase.auth.admin.deleteUser(userId, false);
+    if (userNotFound(error)) return res.json({ id: userId, deleted: true, message: "This account is already deleted." });
     if (error) throw error;
+
+    const verification = await supabase.auth.admin.getUserById(userId);
+    if ((!verification.error && verification.data?.user) || (verification.error && !userNotFound(verification.error))) {
+      return res.status(502).json({ error: "Could not confirm permanent deletion. Refresh the user list before trying again." });
+    }
     logger.info("admin_user_deleted", { adminUserId: req.user.id, targetUserId: userId });
-    res.json({ message: "User deleted" });
+    res.json({ id: userId, deleted: true, message: "Account and its study data permanently deleted." });
   } catch (error) {
     if (error instanceof RequestValidationError) return res.status(400).json({ error: error.message });
     console.error("Admin delete user error:", error);
-    res.status(500).json({ error: "Could not delete this user" });
+    res.status(500).json({ error: "Permanent deletion failed. The account was not marked as deleted. Check server logs for a database constraint or Supabase Storage ownership error, then retry." });
   }
 });
 

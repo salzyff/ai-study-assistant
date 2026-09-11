@@ -15,13 +15,14 @@ function isSuspended(user) {
   return Boolean(user.bannedUntil && new Date(user.bannedUntil) > new Date());
 }
 
-function UserManagement({ accessToken }) {
+function UserManagement({ accessToken, onUsersChanged }) {
   const [statusFilter, setStatusFilter] = useState("all");
   const [sort, setSort] = useState("default");
   const [updatedAt, setUpdatedAt] = useState(null);
   const [endSessionsId, setEndSessionsId] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
   const requestVersion = useRef(0);
+  const actionLock = useRef(false);
   const [roleFilter, setRoleFilter] = useState("all");
   const [users, setUsers] = useState([]);
   const [pagination, setPagination] = useState(null);
@@ -60,7 +61,7 @@ function UserManagement({ accessToken }) {
   const visibleUsers = useMemo(() => {
     const query = search.trim().toLowerCase();
     const result = users.filter((user) =>
-      (statusFilter === "all" || (statusFilter === "suspended" ? isSuspended(user) : statusFilter === "unconfirmed" ? !user.emailConfirmedAt && !isSuspended(user) : Boolean(user.emailConfirmedAt) && !isSuspended(user))) &&
+      (statusFilter === "all" || (statusFilter === "deleted" ? user.isDeleted : !user.isDeleted && (statusFilter === "suspended" ? isSuspended(user) : statusFilter === "unconfirmed" ? !user.emailConfirmedAt && !isSuspended(user) : Boolean(user.emailConfirmedAt) && !isSuspended(user)))) &&
       (roleFilter === "all" || (roleFilter === "admin" ? user.isAdmin : !user.isAdmin)) &&
       (!query || user.email?.toLowerCase().includes(query)
       || user.displayName?.toLowerCase().includes(query)),
@@ -71,12 +72,13 @@ function UserManagement({ accessToken }) {
   }, [search, users, roleFilter, statusFilter, sort]);
 
   async function endSessions(user) {
-    if (busyUser) return;
+    if (actionLock.current) return;
+    actionLock.current = true;
     setBusyUser(user.id); setError(""); setMessage("");
     try {
       const data = await apiRequest(`/api/admin/users/${user.id}/end-sessions`, { accessToken, method: "POST" });
       setMessage(data.message); setEndSessionsId("");
-    } catch (e) { setError(e.message); } finally { setBusyUser(""); }
+    } catch (e) { setError(e.message); } finally { actionLock.current = false; setBusyUser(""); }
   }
   async function copyEmail(email) {
     try { await navigator.clipboard.writeText(email || ""); setMessage("Email copied."); }
@@ -84,6 +86,8 @@ function UserManagement({ accessToken }) {
   }
 
   async function changeStatus(user) {
+    if (actionLock.current) return;
+    actionLock.current = true;
     const suspended = !isSuspended(user);
     try {
       setBusyUser(user.id);
@@ -99,17 +103,38 @@ function UserManagement({ accessToken }) {
     } catch (requestError) {
       setError(requestError.message);
     } finally {
+      actionLock.current = false;
       setBusyUser("");
     }
   }
 
   async function deleteUser(userId) {
-    await apiRequest(`/api/admin/users/${userId}`, { accessToken, method: "DELETE" });
-    setMessage("User deleted.");
-    await loadUsers(users.length === 1 ? Math.max(0, offset - PAGE_SIZE) : offset);
+    if (actionLock.current) throw new Error("Wait for the current account action to finish.");
+    actionLock.current = true;
+    setBusyUser(userId); setError(""); setMessage("");
+    // Invalidate a refresh started before this deletion so it cannot re-add a row.
+    requestVersion.current += 1;
+    try {
+      const data = await apiRequest(`/api/admin/users/${userId}`, { accessToken, method: "DELETE" });
+      if (data.deleted !== true) throw new Error("The server did not confirm deletion. Refresh the list and check the account.");
+      setUsers(current => current.filter(user => user.id !== userId));
+      setSelectedUser(current => current?.id === userId ? null : current);
+      setPromoteUserId(""); setDemoteUserId(""); setEndSessionsId("");
+      setMessage(data.message || "Account and study data permanently deleted.");
+      await loadUsers(users.length === 1 ? Math.max(0, offset - PAGE_SIZE) : offset);
+      onUsersChanged?.();
+    } catch (requestError) {
+      setError(requestError.message);
+      throw requestError;
+    } finally {
+      actionLock.current = false;
+      setBusyUser("");
+    }
   }
 
   async function promoteUser(user) {
+    if (actionLock.current) return;
+    actionLock.current = true;
     try {
       setBusyUser(user.id);
       setError("");
@@ -125,11 +150,14 @@ function UserManagement({ accessToken }) {
     } catch (requestError) {
       setError(requestError.message);
     } finally {
+      actionLock.current = false;
       setBusyUser("");
     }
   }
 
   async function demoteUser(user) {
+    if (actionLock.current) return;
+    actionLock.current = true;
     try {
       setBusyUser(user.id);
       setError("");
@@ -145,6 +173,7 @@ function UserManagement({ accessToken }) {
     } catch (requestError) {
       setError(requestError.message);
     } finally {
+      actionLock.current = false;
       setBusyUser("");
     }
   }
@@ -167,10 +196,10 @@ function UserManagement({ accessToken }) {
             placeholder="Filter this page…"
             aria-label="Filter users on this page"
           />
-          <select aria-label="Filter account status on this page" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}><option value="all">All statuses</option><option value="active">Active</option><option value="suspended">Suspended</option><option value="unconfirmed">Unconfirmed</option></select>
+          <select aria-label="Filter account status on this page" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}><option value="all">All statuses</option><option value="active">Active</option><option value="suspended">Suspended</option><option value="unconfirmed">Unconfirmed</option><option value="deleted">Previously deleted</option></select>
           <select aria-label="Sort this page" value={sort} onChange={e => setSort(e.target.value)}><option value="default">Default order</option><option value="email">Email A–Z</option><option value="recent">Recent sign-in</option></select>
           <button type="button" onClick={() => { setSearch(""); setRoleFilter("all"); setStatusFilter("all"); setSort("default"); }}>Clear filters</button>
-          <button type="button" onClick={() => loadUsers(offset)} disabled={loading}>↻ Refresh</button>
+          <button type="button" onClick={() => loadUsers(offset)} disabled={loading || Boolean(busyUser)}>↻ Refresh</button>
         </div>
       </div>
 
@@ -193,24 +222,24 @@ function UserManagement({ accessToken }) {
               const protectedAccount = user.isEnvironmentAdmin || user.isCurrentUser;
               return (
                 <tr key={user.id}>
-                  <td><strong>{user.displayName}</strong><small>{user.email}</small></td>
+                  <td><strong>{user.displayName}</strong><small>{user.isDeleted ? `Deleted ${formatDate(user.deletedAt)}` : user.email || "No email address"}</small></td>
                   <td>
-                    <span className={`user-status ${suspended ? "user-status-suspended" : user.emailConfirmedAt ? "user-status-active" : "user-status-unconfirmed"}`}>
-                      {suspended ? "Suspended" : user.emailConfirmedAt ? "Active" : "Unconfirmed"}
+                    <span className={`user-status ${user.isDeleted || suspended ? "user-status-suspended" : user.emailConfirmedAt ? "user-status-active" : "user-status-unconfirmed"}`}>
+                      {user.isDeleted ? "Previously deleted" : suspended ? "Suspended" : user.emailConfirmedAt ? "Active" : "Unconfirmed"}
                     </span>
                     {user.isAdmin && <span className="user-admin-badge">Admin</span>}
                   </td>
                   <td>{formatDate(user.createdAt)}</td>
                   <td>{formatDate(user.lastSignInAt)}</td>
                   <td>
-                    <UserActionsMenu email={user.email}>
-                    <button type="button" onClick={() => copyEmail(user.email)}>Copy email</button>
-                    {!protectedAccount && !user.isAdmin && (endSessionsId === user.id ? <div className="admin-session-confirm" role="group" aria-label="Confirm ending sessions">
+                    <UserActionsMenu email={user.email || user.displayName}>
+                    {!user.isDeleted && user.email && <button type="button" onClick={() => copyEmail(user.email)}>Copy email</button>}
+                    {!user.isDeleted && !protectedAccount && !user.isAdmin && (endSessionsId === user.id ? <div className="admin-session-confirm" role="group" aria-label="Confirm ending sessions">
                       <p>End {user.email}’s existing app sessions? Their study data stays saved.</p>
                       <button type="button" disabled={Boolean(busyUser)} onClick={() => endSessions(user)}>Confirm sign-out</button>
                       <button type="button" disabled={Boolean(busyUser)} onClick={() => setEndSessionsId("")}>Cancel</button>
                     </div> : <button type="button" disabled={Boolean(busyUser)} onClick={() => setEndSessionsId(user.id)}>End app sessions</button>)}
-                    <button type="button" onClick={() => setSelectedUser(user)}>Activity &amp; AI allowance</button>
+                    {!user.isDeleted && <button type="button" disabled={Boolean(busyUser)} onClick={() => setSelectedUser(user)}>Activity &amp; AI allowance</button>}
                     {protectedAccount ? (
                       <span className="protected-account">
                         {user.isEnvironmentAdmin ? "Original admin — protected" : "Current account — protected"}
@@ -235,6 +264,7 @@ function UserManagement({ accessToken }) {
                       )
                     ) : (
                       <div className="user-actions">
+                        {!user.isDeleted && <>
                         <button type="button" disabled={busyUser === user.id} onClick={() => changeStatus(user)}>
                           {busyUser === user.id ? "Updating…" : suspended ? "Reactivate" : "Suspend"}
                         </button>
@@ -255,11 +285,12 @@ function UserManagement({ accessToken }) {
                             Promote to admin
                           </button>
                         )}
+                        </>}
                         <DeleteConfirmation
-                          buttonLabel="Delete user"
+                          buttonLabel={user.isDeleted ? "Permanently remove" : "Delete user"}
                           className="user-action-delete"
-                          disabled={busyUser === user.id}
-                          confirmation={`Delete ${user.email}? This removes their access and cannot be undone.`}
+                          disabled={Boolean(busyUser)}
+                          confirmation={user.isDeleted ? `Permanently remove this account (deleted ${formatDate(user.deletedAt)}) and its remaining study data? This cannot be undone.` : `Permanently delete ${user.email || user.displayName} and all their study data? This cannot be undone.`}
                           onConfirm={() => deleteUser(user.id)}
                         />
                       </div>
@@ -274,13 +305,13 @@ function UserManagement({ accessToken }) {
       </div>
 
       <div className="pagination-controls">
-        <button type="button" disabled={loading || offset === 0} onClick={() => loadUsers(Math.max(0, offset - PAGE_SIZE))}>← Previous</button>
+        <button type="button" disabled={loading || Boolean(busyUser) || offset === 0} onClick={() => loadUsers(Math.max(0, offset - PAGE_SIZE))}>← Previous</button>
         <span>
           {pagination?.total == null
             ? `Showing ${users.length}`
             : `${Math.min(offset + 1, pagination.total)}–${Math.min(offset + users.length, pagination.total)} of ${pagination.total}`}
         </span>
-        <button type="button" disabled={loading || !pagination?.hasMore} onClick={() => loadUsers(pagination.nextOffset)}>Next →</button>
+        <button type="button" disabled={loading || Boolean(busyUser) || !pagination?.hasMore} onClick={() => loadUsers(pagination.nextOffset)}>Next →</button>
       </div>
     </div>
   );

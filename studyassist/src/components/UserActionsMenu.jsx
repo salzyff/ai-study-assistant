@@ -11,6 +11,7 @@ export default function UserActionsMenu({ email, children }) {
     if (!open) return;
     const element = panel.current;
     const position = () => {
+      if (!element || !trigger.current) return;
       const rect = trigger.current.getBoundingClientRect();
       const width = Math.min(280, window.innerWidth - 24);
       element.style.width = `${width}px`;
@@ -32,15 +33,15 @@ export default function UserActionsMenu({ email, children }) {
         trigger.current.focus();
       }
     };
-    const observer = new ResizeObserver(position);
-    observer.observe(element);
+    const observer = typeof ResizeObserver === "function" ? new ResizeObserver(position) : null;
+    observer?.observe(element);
     document.addEventListener("pointerdown", dismiss);
     document.addEventListener("focusin", dismiss);
     document.addEventListener("keydown", keyboard);
     window.addEventListener("resize", position);
     window.addEventListener("scroll", position, true);
     return () => {
-      observer.disconnect();
+      observer?.disconnect();
       document.removeEventListener("pointerdown", dismiss);
       document.removeEventListener("focusin", dismiss);
       document.removeEventListener("keydown", keyboard);

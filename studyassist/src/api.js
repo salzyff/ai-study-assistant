@@ -1,4 +1,6 @@
-export const API_URL = import.meta.env.VITE_API_URL;
+import { consumeEventStream } from "./utils/eventStream";
+
+export const API_URL = (import.meta.env.VITE_API_URL || "").trim().replace(/\/+$/, "");
 
 async function readResponse(response) {
   const text = await response.text();
@@ -68,43 +70,9 @@ export async function streamApiRequest(
 
   if (!response.ok) {
     const data = await readResponse(response);
-  if (response.status === 401 && data.code === "SESSION_ENDED") window.dispatchEvent(new Event("study-session-ended"));
+    if (response.status === 401 && data.code === "SESSION_ENDED") window.dispatchEvent(new Event("study-session-ended"));
     throw new Error(data.error || `Request failed with status ${response.status}`);
   }
-  if (!response.body) throw new Error("Streaming is not supported by this browser");
-
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-
-  function processBlock(block) {
-    let event = "message";
-    const dataLines = [];
-    for (const line of block.split("\n")) {
-      if (line.startsWith("event:")) event = line.slice(6).trim();
-      if (line.startsWith("data:")) dataLines.push(line.slice(5).trimStart());
-    }
-    if (!dataLines.length) return;
-    const data = JSON.parse(dataLines.join("\n"));
-    if (event === "error") throw new Error(data.error || "The AI stream was interrupted");
-    onEvent?.(event, data);
-  }
-
-  try {
-  while (true) {
-    const { done, value } = await reader.read();
-    buffer += decoder.decode(value || new Uint8Array(), { stream: !done }).replaceAll("\r\n", "\n");
-    let boundary;
-    while ((boundary = buffer.indexOf("\n\n")) !== -1) {
-      const block = buffer.slice(0, boundary);
-      buffer = buffer.slice(boundary + 2);
-      if (block.trim()) processBlock(block);
-    }
-    if (done) break;
-  }
-  if (buffer.trim()) processBlock(buffer);
-  } finally {
-    await reader.cancel().catch(() => {});
-    reader.releaseLock();
-  }
+  if (!response.headers.get("content-type")?.includes("text/event-stream")) throw new Error("The chat server returned an unexpected response. Check the backend connection.");
+  await consumeEventStream(response.body, onEvent);
 }
