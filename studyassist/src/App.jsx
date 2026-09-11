@@ -9,6 +9,7 @@ import TaskPlanner from "./components/TaskPlanner";
 import { supabase } from "./supabase";
 import StudyPlanGenerator from "./components/StudyPlanGenerator";
 import Quiz from "./components/Quiz";
+import QuestionBank from "./components/QuestionBank";
 import Notes from "./components/Notes";
 import Flashcards from "./components/Flashcards";
 import Progress from "./components/Progress";
@@ -760,6 +761,21 @@ function App() {
   <Quiz key={session.user.id} accessToken={accessToken} userId={session.user.id} />
 </div>
   </section>
+) : activeTool === "question-bank" ? (
+  <section className="tool-page">
+    <button className="back-button" type="button" onClick={() => openTool(null)}>
+      ← Back to Dashboard
+    </button>
+    <div className="tool-page-header">
+      <div>
+        <h1>Question Bank 📚</h1>
+        <p>Create original practice questions and turn the ones you choose into a quiz.</p>
+      </div>
+    </div>
+    <div className="tool-page-content">
+      <QuestionBank accessToken={accessToken} />
+    </div>
+  </section>
 ) : activeTool === "plan" ? (
   <section className="tool-page">
 
@@ -1062,7 +1078,7 @@ function App() {
 
           <div className="tool-grid">
 
-          <div
+  <div
     className="tool-card quiz-card"
     onClick={() => openTool("quiz")}
     onKeyDown={(event) => openToolWithKeyboard(event, "quiz")}
@@ -1125,6 +1141,20 @@ function App() {
     <div>
       <h3>Notes & PDFs</h3>
       <p>Upload and study your notes.</p>
+    </div>
+  </div>
+
+  <div
+    className="tool-card"
+    onClick={() => openTool("question-bank")}
+    onKeyDown={(event) => openToolWithKeyboard(event, "question-bank")}
+    role="button"
+    tabIndex="0"
+  >
+    <div className="tool-icon">📚</div>
+    <div>
+      <h3>Question Bank</h3>
+      <p>Build original practice questions.</p>
     </div>
   </div>
 
