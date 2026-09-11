@@ -7,7 +7,6 @@ const routes = {
   "/home": { title: "Home", tool: null },
   "/chat": { title: "New chat", tool: "chat", sessionId: null },
   "/quiz": { title: "Quiz", tool: "quiz" },
-  "/question-bank": { title: "Question bank", tool: "question-bank" },
   "/tasks": { title: "Task planner", tool: "task" },
   "/study-plan": { title: "Study plan", tool: "plan" },
   "/notes": { title: "Notes & PDFs", tool: "notes" },
