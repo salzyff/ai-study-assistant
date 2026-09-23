@@ -57,12 +57,24 @@ function App() {
   const [session, setSession] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [passwordRecovery, setPasswordRecovery] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const [message, setMessage] = useState("");
   const [subject, setSubject] = useState(preferences.defaultSubject);
   const [mode, setMode] = useState(preferences.defaultMode);
   const route = resolveRoute(path);
   const activeTool = route?.tool ?? null;
+
+  useEffect(() => {
+    if (!mobileSidebarOpen) return undefined;
+
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setMobileSidebarOpen(false);
+    };
+
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [mobileSidebarOpen]);
   const [sessionId, setSessionId] = useState(null);
 
   const [messages, setMessages] = useState([]);
@@ -483,9 +495,31 @@ function App() {
 
   return (
     <div className="app-shell">
+      {mobileSidebarOpen && (
+        <button
+          className="mobile-sidebar-scrim"
+          type="button"
+          aria-label="Close recent chats"
+          onClick={() => setMobileSidebarOpen(false)}
+        />
+      )}
 
       {/* SIDEBAR */}
-      <aside className="sidebar">
+      <aside
+        id="recent-chats-drawer"
+        className={mobileSidebarOpen ? "sidebar sidebar-open" : "sidebar"}
+        aria-label="Recent chats"
+      >
+        <div className="mobile-sidebar-heading">
+          <strong>Chats</strong>
+          <button
+            type="button"
+            aria-label="Close recent chats"
+            onClick={() => setMobileSidebarOpen(false)}
+          >
+            ×
+          </button>
+        </div>
 
         <div className="brand">
           <div className="brand-icon">🧠</div>
@@ -499,7 +533,7 @@ function App() {
         <button
           className="new-chat-button"
           type="button"
-          onClick={startNewChat}
+          onClick={() => { startNewChat(); setMobileSidebarOpen(false); }}
           disabled={loading}
         >
           <span>＋</span>
@@ -525,7 +559,7 @@ function App() {
             >
               <button
                 type="button"
-                onClick={() => openConversation(conversation)}
+                onClick={() => { openConversation(conversation); setMobileSidebarOpen(false); }}
               >
                 <span className="chat-icon">💬</span>
 
@@ -562,7 +596,7 @@ function App() {
           <button
             className="user-card profile-button"
             type="button"
-            onClick={() => openTool("profile")}
+            onClick={() => { openTool("profile"); setMobileSidebarOpen(false); }}
           >
             <div className="avatar">
               {session.user.email?.charAt(0).toUpperCase()}
@@ -580,6 +614,19 @@ function App() {
 
       {/* MAIN AREA */}
       <main className="main-area">
+        <div className="mobile-history-bar">
+          <button
+            className="mobile-history-trigger"
+            type="button"
+            aria-label="Open recent chats"
+            aria-controls="recent-chats-drawer"
+            aria-expanded={mobileSidebarOpen}
+            onClick={() => setMobileSidebarOpen(true)}
+          >
+            <span aria-hidden="true">☰</span>
+            <span>Chats</span>
+          </button>
+        </div>
       {error && activeTool !== "chat" && <p className="operations-error" role="alert">{error}</p>}
       {activeTool === "change-password" ? (
         <ChangePassword onBack={() => openTool("profile")} />
