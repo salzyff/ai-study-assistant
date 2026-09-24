@@ -72,8 +72,34 @@ function App() {
       if (event.key === "Escape") setMobileSidebarOpen(false);
     };
 
+    const drawer = document.getElementById("recent-chats-drawer");
+    const previousFocus = document.activeElement;
+    const previousOverflow = document.body.style.overflow;
+    const mobile = window.matchMedia("(max-width: 650px)");
+    if (mobile.matches) {
+      document.body.style.overflow = "hidden";
+      drawer?.querySelector("button")?.focus();
+    }
+    const trapFocus = (event) => {
+      if (event.key !== "Tab" || !mobile.matches) return;
+      const controls = [...(drawer?.querySelectorAll('button:not(:disabled), a[href], input:not(:disabled)') || [])]
+        .filter((element) => element.getClientRects().length > 0);
+      const first = controls[0];
+      const last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    };
+    const handleResize = () => { if (!mobile.matches) setMobileSidebarOpen(false); };
+    mobile.addEventListener("change", handleResize);
     window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
+    window.addEventListener("keydown", trapFocus);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      mobile.removeEventListener("change", handleResize);
+      window.removeEventListener("keydown", closeOnEscape);
+      window.removeEventListener("keydown", trapFocus);
+      if (previousFocus?.isConnected) previousFocus.focus();
+    };
   }, [mobileSidebarOpen]);
   const [sessionId, setSessionId] = useState(null);
 
@@ -554,18 +580,18 @@ function App() {
 
           {conversations.map((conversation) => (
             <div
-              className="conversation-item"
+              className={sessionId === conversation.id ? "conversation-item conversation-item-active" : "conversation-item"}
               key={conversation.id}
             >
               <button
                 type="button"
                 onClick={() => { openConversation(conversation); setMobileSidebarOpen(false); }}
               >
-                <span className="chat-icon">💬</span>
+                <svg className="chat-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9H13a8.5 8.5 0 0 1 8 8v.5Z" /></svg>
 
                 <span className="conversation-text">
-                  <strong>{conversation.subject}</strong>
-                  <small>{conversation.mode}</small>
+                  <strong title={conversation.title || "New conversation"}>{conversation.title || "New conversation"}</strong>
+                  <small>{conversation.subject} · {conversation.mode}</small>
                 </span>
               </button>
 
@@ -618,13 +644,14 @@ function App() {
           <button
             className="mobile-history-trigger"
             type="button"
+            title="Recent chats"
             aria-label="Open recent chats"
             aria-controls="recent-chats-drawer"
             aria-expanded={mobileSidebarOpen}
             onClick={() => setMobileSidebarOpen(true)}
           >
-            <span aria-hidden="true">☰</span>
-            <span>Chats</span>
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M3 11a9 9 0 1 1 2.6 7.4M3 4v7h7M12 7v5l3 2" /></svg>
+            <span>Recent chats</span>
           </button>
         </div>
       {error && activeTool !== "chat" && <p className="operations-error" role="alert">{error}</p>}
@@ -1094,11 +1121,6 @@ function App() {
         )}
         {activeTool === null && (
         <>
-        {(sessionId || messages.length > 0) && (
-          <button className="back-button" type="button" onClick={() => openTool("chat")}>
-            Continue current chat
-          </button>
-        )}
         <StudyNext accessToken={accessToken} userId={session.user.id} conversations={conversations} onChat={openConversation} onTool={openTool} />
         <section className="study-tools">
 

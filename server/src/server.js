@@ -433,13 +433,37 @@ Student: ${cleanMessage}`;
   }
 });
 
+function summarizeChatPrompt(prompt) {
+  const text = String(prompt || "")
+    .replace(/[#*_`]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!text) return "New conversation";
+  const topic = text
+    .replace(/^(?:(?:hi|hello|hey)[,!]?\s+)?(?:(?:please\s+)?(?:can|could|would)\s+you\s+(?:please\s+)?|please\s+|help\s+me\s+(?:to\s+)?)/i, "")
+    .replace(/^(?:explain|summarize|tell me about|teach me about)\s+/i, "")
+    .replace(/[.!?]+$/, "").trim() || text;
+  const words = topic.split(" ");
+  let title = words.slice(0, 9).join(" ");
+  if (title.length > 64) {
+    title = title.slice(0, 61);
+    const boundary = title.lastIndexOf(" ");
+    if (boundary > 30) title = title.slice(0, boundary);
+  }
+  return title.charAt(0).toUpperCase() + title.slice(1) + (title.length < topic.length ? "…" : "");
+}
+
 // Get the logged-in student's conversations
 app.get("/api/conversations", async (req, res) => {
   try {
     const pagination = parsePagination(req.query, { defaultLimit: 30 });
     const { data, error, count } = await supabase
       .from("conversations")
-      .select("id, subject, mode, created_at, updated_at", { count: "exact" })
+      .select("id, subject, mode, created_at, updated_at, messages(content)", { count: "exact" })
+      .eq("messages.role", "student")
+      .order("created_at", { referencedTable: "messages", ascending: true })
+      .order("id", { referencedTable: "messages", ascending: true })
+      .limit(1, { referencedTable: "messages" })
       .eq("user_id", req.user.id)
       .order("updated_at", { ascending: false })
       .range(pagination.from, pagination.to);
@@ -449,7 +473,10 @@ app.get("/api/conversations", async (req, res) => {
     }
 
     res.json({
-      conversations: data,
+      conversations: data.map(({ messages, ...conversation }) => ({
+        ...conversation,
+        title: summarizeChatPrompt(messages?.[0]?.content),
+      })),
       pagination: paginationResult({ ...pagination, count, returned: data.length }),
     });
   } catch (error) {
