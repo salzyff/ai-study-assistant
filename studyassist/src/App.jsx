@@ -1,9 +1,11 @@
 import { useSessionSecurity } from "./utils/useSessionSecurity";
 import { normalizeMessages, storePreferences } from "./utils/chatSafety";
 import StudyNext from "./components/StudyNext";
-import AnswerReport from "./components/AnswerReport";
+import ChatSidebar from "./components/ChatSidebar";
+import ChatWorkspace from "./components/ChatWorkspace";
+import ChatIcon from "./components/ChatIcon";
+import { mergeChatHistory } from "./utils/chatHistory";
 import { useCallback, useEffect, useRef, useState } from "react";
-import ReactMarkdown from "./components/MathMarkdown";
 import Auth from "./components/Auth";
 import TaskPlanner from "./components/TaskPlanner";
 import { supabase } from "./supabase";
@@ -14,7 +16,6 @@ import Flashcards from "./components/Flashcards";
 import Progress from "./components/Progress";
 import Dashboard from "./components/Dashboard";
 import LearningCenter from "./components/LearningCenter";
-import DeleteConfirmation from "./components/DeleteConfirmation";
 import ResetPassword from "./components/ResetPassword";
 import Profile from "./components/Profile";
 import ChangePassword from "./components/ChangePassword";
@@ -58,6 +59,21 @@ function App() {
   const [authLoading, setAuthLoading] = useState(true);
   const [passwordRecovery, setPasswordRecovery] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia("(max-width: 768px)").matches);
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 768px)");
+    const changed = event => setIsMobile(event.matches);
+    media.addEventListener("change", changed);
+    return () => media.removeEventListener("change", changed);
+  }, []);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try { return localStorage.getItem("studyai-sidebar-collapsed") === "true"; }
+    catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("studyai-sidebar-collapsed", String(sidebarCollapsed)); }
+    catch { /* Keep navigation usable when storage is unavailable. */ }
+  }, [sidebarCollapsed]);
 
   const [message, setMessage] = useState("");
   const [subject, setSubject] = useState(preferences.defaultSubject);
@@ -69,20 +85,20 @@ function App() {
     if (!mobileSidebarOpen) return undefined;
 
     const closeOnEscape = (event) => {
-      if (event.key === "Escape") setMobileSidebarOpen(false);
+      if (event.key === "Escape" && !document.querySelector("dialog[open]")) setMobileSidebarOpen(false);
     };
 
     const drawer = document.getElementById("recent-chats-drawer");
     const previousFocus = document.activeElement;
     const previousOverflow = document.body.style.overflow;
-    const mobile = window.matchMedia("(max-width: 650px)");
+    const mobile = window.matchMedia("(max-width: 768px)");
     if (mobile.matches) {
       document.body.style.overflow = "hidden";
       drawer?.querySelector("button")?.focus();
     }
     const trapFocus = (event) => {
       if (event.key !== "Tab" || !mobile.matches) return;
-      const controls = [...(drawer?.querySelectorAll('button:not(:disabled), a[href], input:not(:disabled)') || [])]
+      const controls = [...(drawer?.querySelectorAll('button:not(:disabled), a[href], input:not(:disabled), summary') || [])]
         .filter((element) => element.getClientRects().length > 0);
       const first = controls[0];
       const last = controls[controls.length - 1];
@@ -106,6 +122,10 @@ function App() {
   const [messages, setMessages] = useState([]);
   const [conversations, setConversations] = useState([]);
   const [conversationPagination, setConversationPagination] = useState(null);
+  const [conversationListLoading, setConversationListLoading] = useState(false);
+  const [conversationError, setConversationError] = useState("");
+  const conversationRequest = useRef(0);
+  const conversationListBusy = useRef(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminCheckedToken, setAdminCheckedToken] = useState(null);
   const [adminError, setAdminError] = useState("");
@@ -168,6 +188,7 @@ function App() {
     const frame = window.requestAnimationFrame(() => {
       window.scrollTo(0, 0);
       document.querySelector(".main-area")?.scrollTo?.(0, 0);
+      document.querySelector(".sa-main-content")?.scrollTo?.(0, 0);
     });
     return () => window.cancelAnimationFrame(frame);
   }, [path]);
@@ -216,6 +237,9 @@ function App() {
           setMessages([]); setConversations([]); setSessionId(null);
           setLoadedChatId(null); setIsAdmin(false); setAdminCheckedToken(null);
           setConversationPagination(null);
+          conversationRequest.current += 1;
+          conversationListBusy.current = false;
+          setConversationListLoading(false); setConversationError("");
         }
         setSession(currentSession);
         setAuthLoading(false);
@@ -232,7 +256,11 @@ function App() {
     cancelChatRequest();
     setSession(null); setMessages([]); setConversations([]);
     setSessionId(null); setLoadedChatId(null); setIsAdmin(false);
-    setConversationPagination(null); setAdminCheckedToken(null);
+    setConversationPagination(null);
+    conversationRequest.current += 1;
+    conversationListBusy.current = false;
+    setConversationListLoading(false); setConversationError("");
+    setAdminCheckedToken(null);
     setPasswordRecovery(false);
     navigate("/login", { replace: true });
   }, [cancelChatRequest, navigate]);
@@ -240,17 +268,22 @@ function App() {
 
   const loadConversations = useCallback(async ({ offset = 0, append = false } = {}) => {
     const version = accountVersion.current;
+    const requestId = ++conversationRequest.current;
+    conversationListBusy.current = true;
+    setConversationListLoading(true);
+    setConversationError("");
     try {
-
       const data = await apiRequest(`/api/conversations?limit=20&offset=${offset}`, { accessToken });
-
-      if (version !== accountVersion.current) return;
-      setConversations((current) => append
-        ? [...current, ...(data.conversations || [])]
-        : (data.conversations || []));
+      if (version !== accountVersion.current || requestId !== conversationRequest.current) return;
+      setConversations(current => mergeChatHistory(append ? current : [], data.conversations || []));
       setConversationPagination(data.pagination || null);
     } catch (requestError) {
-      if (version === accountVersion.current) setError(requestError.message);
+      if (version === accountVersion.current && requestId === conversationRequest.current) setConversationError(requestError.message);
+    } finally {
+      if (version === accountVersion.current && requestId === conversationRequest.current) {
+        conversationListBusy.current = false;
+        setConversationListLoading(false);
+      }
     }
   }, [accessToken]);
 
@@ -317,18 +350,10 @@ function App() {
     return () => { window.clearTimeout(timer); controller.abort(); };
   }, [path, accessToken, passwordRecovery, preferences.defaultSubject, preferences.defaultMode]);
 
-  async function loadMoreConversations() {
-    if (!conversationPagination?.hasMore || historyLoading) return;
-    try {
-      setHistoryLoading(true);
-      await loadConversations({
-        offset: conversationPagination.nextOffset,
-        append: true,
-      });
-    } finally {
-      setHistoryLoading(false);
-    }
-  }
+  const loadMoreConversations = useCallback(async () => {
+    if (!conversationPagination?.hasMore || conversationListBusy.current) return;
+    await loadConversations({ offset: conversationPagination.nextOffset, append: true });
+  }, [conversationPagination, loadConversations]);
 
   function openConversation(conversation) {
     navigate(toolPath("chat", conversation.id));
@@ -448,7 +473,11 @@ function App() {
       });
 
       if (sessionId === conversationId) {
-        startNewChat();
+        if (activeTool === "chat") startNewChat();
+        else {
+          cachedChatId.current = null;
+          setSessionId(null); setLoadedChatId(null); setMessages([]);
+        }
       }
 
       setConversations((current) =>
@@ -520,142 +549,51 @@ function App() {
   }
 
   return (
-    <div className="app-shell">
-      {mobileSidebarOpen && (
-        <button
-          className="mobile-sidebar-scrim"
-          type="button"
-          aria-label="Close recent chats"
-          onClick={() => setMobileSidebarOpen(false)}
-        />
-      )}
-
-      {/* SIDEBAR */}
-      <aside
-        id="recent-chats-drawer"
-        className={mobileSidebarOpen ? "sidebar sidebar-open" : "sidebar"}
-        aria-label="Recent chats"
-      >
-        <div className="mobile-sidebar-heading">
-          <strong>Chats</strong>
-          <button
-            type="button"
-            aria-label="Close recent chats"
-            onClick={() => setMobileSidebarOpen(false)}
-          >
-            ×
-          </button>
-        </div>
-
-        <div className="brand">
-          <div className="brand-icon">🧠</div>
-
-          <div>
-            <h2>Study AI</h2>
-            <span>Your study companion</span>
+    <div className={`app-shell study-layout${sidebarCollapsed ? " sa-sidebar-collapsed" : ""}`}>
+      {mobileSidebarOpen && <button className="sa-sidebar-scrim" type="button" aria-label="Close sidebar" onClick={() => setMobileSidebarOpen(false)} />}
+      <ChatSidebar
+        key={session.user.id}
+        open={mobileSidebarOpen}
+        conversations={conversations}
+        selectedId={route.sessionId}
+        activeTool={activeTool}
+        pagination={conversationPagination}
+        loading={conversationListLoading}
+        error={conversationError}
+        user={session.user}
+        isAdmin={isAdmin}
+        onNewChat={startNewChat}
+        onOpenChat={openConversation}
+        onOpenTool={openTool}
+        onClose={() => setMobileSidebarOpen(false)}
+        onCollapse={() => setSidebarCollapsed(true)}
+        onLoadMore={loadMoreConversations}
+        onRetry={() => loadConversations()}
+        onDeleteChat={deleteConversation}
+      />
+      <main className="main-area sa-main">
+        <header className="sa-topbar">
+          <div className="sa-topbar-brand">
+            <button type="button" className="sa-icon-button sa-sidebar-toggle" aria-label={sidebarCollapsed && !isMobile ? "Show sidebar" : "Toggle sidebar"} aria-controls="recent-chats-drawer" aria-expanded={isMobile ? mobileSidebarOpen : !sidebarCollapsed} onClick={() => {
+              if (isMobile) setMobileSidebarOpen(true);
+              else setSidebarCollapsed(current => !current);
+            }}><ChatIcon name="panel" /></button>
+            <strong>{activeTool === "chat" ? "Study AI" : route.title}</strong>
           </div>
-        </div>
-
-        <button
-          className="new-chat-button"
-          type="button"
-          onClick={() => { startNewChat(); setMobileSidebarOpen(false); }}
-          disabled={loading}
-        >
-          <span>＋</span>
-          New Chat
-        </button>
-
-        <div className="history-header">
-          <span>Recent chats</span>
-        </div>
-
-        <div className="conversation-list">
-
-          {conversations.length === 0 && (
-            <p className="empty-history">
-              Your conversations will appear here.
-            </p>
-          )}
-
-          {conversations.map((conversation) => (
-            <div
-              className={sessionId === conversation.id ? "conversation-item conversation-item-active" : "conversation-item"}
-              key={conversation.id}
-            >
-              <button
-                type="button"
-                onClick={() => { openConversation(conversation); setMobileSidebarOpen(false); }}
-              >
-                <svg className="chat-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9H13a8.5 8.5 0 0 1 8 8v.5Z" /></svg>
-
-                <span className="conversation-text">
-                  <strong title={conversation.title || "New conversation"}>{conversation.title || "New conversation"}</strong>
-                  <small>{conversation.subject} · {conversation.mode}</small>
-                </span>
-              </button>
-
-              <DeleteConfirmation
-                className="delete-button"
-                buttonLabel="×"
-                confirmation="Delete this conversation permanently?"
-                onConfirm={() => deleteConversation(conversation.id)}
-              />
-            </div>
-          ))}
-
-          {conversationPagination?.hasMore && (
-            <button
-              className="history-load-more"
-              type="button"
-              onClick={loadMoreConversations}
-              disabled={historyLoading}
-            >
-              {historyLoading ? "Loading…" : "Load older chats"}
-            </button>
-          )}
-
-        </div>
-
-        <div className="sidebar-bottom">
-
-          <button
-            className="user-card profile-button"
-            type="button"
-            onClick={() => { openTool("profile"); setMobileSidebarOpen(false); }}
-          >
-            <div className="avatar">
-              {session.user.email?.charAt(0).toUpperCase()}
-            </div>
-
-            <div className="user-info">
-              <strong>{session.user.user_metadata?.display_name || "Student"}</strong>
-              <span>{session.user.email}</span>
-            </div>
-          </button>
-
-        </div>
-
-      </aside>
-
-      {/* MAIN AREA */}
-      <main className="main-area">
-        <div className="mobile-history-bar">
-          <button
-            className="mobile-history-trigger"
-            type="button"
-            title="Recent chats"
-            aria-label="Open recent chats"
-            aria-controls="recent-chats-drawer"
-            aria-expanded={mobileSidebarOpen}
-            onClick={() => setMobileSidebarOpen(true)}
-          >
-            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M3 11a9 9 0 1 1 2.6 7.4M3 4v7h7M12 7v5l3 2" /></svg>
-            <span>Recent chats</span>
-          </button>
-        </div>
+          {activeTool === "chat" && <span className="sa-active-chat-title">{conversations.find(chat => chat.id === route.sessionId)?.title || "New chat"}</span>}
+          <button className="sa-icon-button" type="button" aria-label="New chat" title="New chat" onClick={startNewChat}><ChatIcon name="compose" /></button>
+        </header>
+        <div className={`sa-main-content${activeTool === "chat" ? " sa-main-content-chat" : ""}`}>
       {error && activeTool !== "chat" && <p className="operations-error" role="alert">{error}</p>}
-      {activeTool === "change-password" ? (
+      {activeTool === "chat" ? (
+        <ChatWorkspace
+          key={route.sessionId || "new-chat"}
+          messages={messages} message={message} onMessageChange={setMessage} onSend={sendMessage}
+          subject={subject} onSubjectChange={setSubject} mode={mode} onModeChange={setMode}
+          loading={loading} historyLoading={historyLoading} chatReady={chatReady}
+          streamStatus={streamStatus} error={error} sessionId={sessionId} accessToken={accessToken}
+        />
+      ) : activeTool === "change-password" ? (
         <ChangePassword onBack={() => openTool("profile")} />
       ) : activeTool === "profile" ? (
         <Profile
@@ -899,226 +837,6 @@ function App() {
 
         </header>
 
-        {/* CONTROLS */}
-        {activeTool === "chat" && (
-        <>
-        <section className="study-controls">
-
-          <div className="control-group">
-            <label htmlFor="subject">📚 Subject</label>
-
-            <select
-              id="subject"
-              value={subject}
-              onChange={(event) =>
-                setSubject(event.target.value)
-              }
-            >
-              {SUBJECTS.map((subjectOption) => (
-                <option value={subjectOption} key={subjectOption}>
-                  {subjectOption}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="control-group">
-            <label htmlFor="mode">🎯 Study Mode</label>
-
-            <select
-              id="mode"
-              value={mode}
-              onChange={(event) =>
-                setMode(event.target.value)
-              }
-            >
-              <option value="ask">Ask</option>
-              <option value="explain">Explain</option>
-              <option value="summarize">Summarize</option>
-              <option value="practice">Practice</option>
-            </select>
-          </div>
-
-        </section>
-
-        {/* CHAT */}
-        <section className="chat-container">
-  <div className="chat-header">
-    <div className="ai-avatar">🧠</div>
-    <div className="chat-title">
-      <strong>Study Assistant</strong>
-    </div>
-    {streamStatus !== "idle" && <div className="chat-status" role="status">
-      <span className={`status-dot ${streamStatus !== "idle" ? "status-dot-working" : ""}`}></span>
-      {streamStatus === "connecting" && "Connecting…"}
-      {streamStatus === "streaming" && "Writing live…"}
-      {streamStatus === "saving" && "Saving…"}
-    </div>}
-  </div>
-
-          <div className="messages">
-
-            {historyLoading && (
-              <div className="system-message">
-                Loading conversation...
-              </div>
-            )}
-
-            {!historyLoading && chatReady && messages.length === 0 && (
-              <div className="welcome">
-
-                <div className="welcome-icon">✨</div>
-
-                <h2>What would you like to learn?</h2>
-
-                <p>
-                  Ask me a question, request an explanation,
-                  summarize a topic, or practice your knowledge.
-                </p>
-
-                <div className="suggestions">
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setMessage(
-                        "Explain this topic to me in simple terms."
-                      )
-                    }
-                  >
-                    💡 Explain a topic
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setMessage(
-                        "Give me practice questions on this subject."
-                      )
-                    }
-                  >
-                    📝 Practice questions
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setMessage(
-                        "Summarize the most important things I need to know."
-                      )
-                    }
-                  >
-                    📖 Summarize
-                  </button>
-
-                </div>
-
-              </div>
-            )}
-
-            {(chatReady ? messages : []).map((chatMessage, index) => (
-
-              <article
-                className={`message ${
-                  chatMessage.role === "student"
-                    ? "student-message"
-                    : "assistant-message"
-                }`}
-                key={chatMessage.id || index}
-              >
-
-                <div className="message-avatar">
-                  {chatMessage.role === "student"
-                    ? "👤"
-                    : "🧠"}
-                </div>
-
-                <div className="message-content">
-
-                  <strong>
-                    {chatMessage.role === "student"
-                      ? "You"
-                      : "Study Assistant"}
-                  </strong>
-
-                  <ReactMarkdown>
-                    {chatMessage.content}
-                  </ReactMarkdown>
-                  {chatMessage.role === "assistant" && <AnswerReport accessToken={accessToken} kind="chat" sourceId={chatMessage.id} containerId={sessionId} />}
-
-                </div>
-
-              </article>
-
-            ))}
-
-            {loading && (
-              <div className="typing">
-
-                <div className="message-avatar">🧠</div>
-
-                <div className="typing-bubble">
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                </div>
-
-              </div>
-            )}
-
-            {error && (
-              <div className="error-message">
-                ⚠️ {error}
-              </div>
-            )}
-
-          </div>
-
-          {/* MESSAGE INPUT */}
-          <form
-            className="message-form"
-            onSubmit={sendMessage}
-          >
-
-
-<textarea
-  value={message}
-  aria-label="Study question"
-  disabled={!chatReady || historyLoading}
-  maxLength="6000"
-  onChange={(event) =>
-    setMessage(event.target.value)
-  }
-  onKeyDown={(event) => {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      sendMessage(event);
-    }
-  }}
-  placeholder="Ask anything about your studies..."
-  rows="1"
-/>
-
-
-            <button
-              type="submit"
-              disabled={loading || historyLoading || !chatReady || !message.trim()}
-              aria-label="Send message"
-            >
-              {loading ? "..." : "➤"}
-            </button>
-
-          </form>
-
-          <p className="input-hint">
-            AI can make mistakes. Always verify important information.
-          </p>
-
-        </section>
-
-        {/* TOOLS */}
-        </>
-        )}
         {activeTool === null && (
         <>
         <StudyNext accessToken={accessToken} userId={session.user.id} conversations={conversations} onChat={openConversation} onTool={openTool} />
@@ -1291,6 +1009,7 @@ function App() {
   </>
 )}
 
+        </div>
       </main>
 
     </div>
@@ -1298,3 +1017,4 @@ function App() {
 }
 
 export default App;
+
