@@ -4,9 +4,11 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 import './style-fixes.css'
+import './chat-layout.css'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <AppRecovery><App /></AppRecovery>
   </StrictMode>,
 )
+
