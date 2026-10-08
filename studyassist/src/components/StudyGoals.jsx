@@ -78,7 +78,8 @@ function StudyGoals({ accessToken }) {
 
   return (
     <section className="learning-utility">
-      <h2>Weekly study goals</h2>
+      <h2>Set a weekly goal</h2>
+      <p>Choose something manageable and give yourself a date to aim for.</p>
       <form onSubmit={createGoal}>
         <p>
           <label htmlFor="goal-subject">Subject</label><br />
@@ -86,7 +87,7 @@ function StudyGoals({ accessToken }) {
             {SUBJECTS.map((item) => <option value={item} key={item}>{item}</option>)}
           </select>
         </p>
-        <p><label htmlFor="goal-title">Goal title</label><br /><input id="goal-title" value={title} onChange={(event) => setTitle(event.target.value)} maxLength="160" required /></p>
+        <p><label htmlFor="goal-title">What would you like to achieve?</label><br /><input id="goal-title" value={title} onChange={(event) => setTitle(event.target.value)} maxLength="160" required /></p>
         <p>
           <label htmlFor="goal-type">Track</label><br />
           <select id="goal-type" value={targetType} onChange={(event) => { setTargetType(event.target.value); if (event.target.value === "quiz_score") setTargetValue(80); }}>
@@ -96,13 +97,13 @@ function StudyGoals({ accessToken }) {
             <option value="quiz_score">Best quiz percentage</option>
           </select>
         </p>
-        <p><label htmlFor="goal-target">Target value</label><br /><input id="goal-target" type="number" min="1" max={targetType === "quiz_score" ? 100 : 10000} value={targetValue} onChange={(event) => setTargetValue(event.target.value)} /></p>
+        <p><label htmlFor="goal-target">Target</label><br /><input id="goal-target" type="number" min="1" max={targetType === "quiz_score" ? 100 : 10000} value={targetValue} onChange={(event) => setTargetValue(event.target.value)} /></p>
         <p><label htmlFor="goal-end">Deadline</label><br /><input id="goal-end" type="date" value={periodEnd} onChange={(event) => setPeriodEnd(event.target.value)} required /></p>
         <button type="submit" disabled={loading}>Create goal</button>
       </form>
 
       <h3>Your goals</h3>
-      {goals.length === 0 ? <p>No goals yet.</p> : (
+      {goals.length === 0 ? <p>No goals yet. Start with one thing you’d like to achieve this week.</p> : (
         <ul>
           {goals.map((goal) => (
             <li key={goal.id}>
@@ -124,3 +125,4 @@ function StudyGoals({ accessToken }) {
 }
 
 export default StudyGoals;
+

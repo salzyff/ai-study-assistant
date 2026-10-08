@@ -4,6 +4,7 @@ import StudyNext from "./components/StudyNext";
 import ChatSidebar from "./components/ChatSidebar";
 import ChatWorkspace from "./components/ChatWorkspace";
 import ChatIcon from "./components/ChatIcon";
+import ToolPage from "./components/ToolPage";
 import { mergeChatHistory } from "./utils/chatHistory";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Auth from "./components/Auth";
@@ -27,6 +28,19 @@ import { SUBJECTS } from "./constants/subjects";
 import { apiRequest, streamApiRequest } from "./api";
 import { authRedirect, normalizePath, resolveRoute, toolPath } from "./utils/routes";
 import { rememberRecovery, hasRecovery, clearRecovery } from "./utils/passwordRecovery";
+
+const TOOL_PAGES = {
+  admin: { title: "Administration", description: "Manage accounts and keep an eye on how Study AI is running." },
+  reports: { title: "Weekly reports", description: "Look back at what you studied and decide what to work on next." },
+  learning: { title: "Learning centre", description: "Revisit a tricky topic, try a question, or set a small goal." },
+  notes: { title: "Notes & PDFs", description: "Keep your materials together and ask questions about them." },
+  flashcards: { title: "Flashcards", description: "A little practice today makes things easier to remember tomorrow." },
+  progress: { title: "Progress", description: "See where your time went and how your practice is going." },
+  dashboard: { title: "Study dashboard", description: "Your recent activity, all in one place." },
+  quiz: { title: "Quiz", description: "Find out what you know and what could use another look." },
+  plan: { title: "Study plan", description: "Break your revision into a schedule you can work with." },
+  task: { title: "Task planner", description: "One task at a time. Keep track of what needs doing." },
+};
 
 const STUDY_MODES = ["ask", "explain", "summarize", "practice"];
 
@@ -583,7 +597,7 @@ function App() {
           {activeTool === "chat" && <span className="sa-active-chat-title">{conversations.find(chat => chat.id === route.sessionId)?.title || "New chat"}</span>}
           <button className="sa-icon-button" type="button" aria-label="New chat" title="New chat" onClick={startNewChat}><ChatIcon name="compose" /></button>
         </header>
-        <div className={`sa-main-content${activeTool === "chat" ? " sa-main-content-chat" : ""}`}>
+        <div className={`sa-main-content${activeTool === "chat" ? " sa-main-content-chat" : " sa-pages"}`}>
       {error && activeTool !== "chat" && <p className="operations-error" role="alert">{error}</p>}
       {activeTool === "chat" ? (
         <ChatWorkspace
@@ -610,228 +624,31 @@ function App() {
           isAdmin={isAdmin}
           onOpenAdmin={() => openTool("admin")}
         />
-      ) : activeTool === "admin" ? (
-        <section className="tool-page">
-          <button className="back-button" type="button" onClick={() => openTool("profile")}>← Back to Profile</button>
-          <div className="tool-page-header"><div><h1>Admin Dashboard ⚙️</h1><p>Monitor the backend and manage queued work.</p></div></div>
-          <div className="tool-page-content">
-            {adminCheckedToken !== accessToken ? <p role="status">Checking administrator access…</p> : isAdmin ? (
-              <AdminDashboard accessToken={accessToken} section={route.section} onNavigate={navigate} />
-            ) : <div className="operations-error" role="alert"><p>{adminError || "Administrator access is required for this page."}</p><button type="button" onClick={() => window.location.reload()}>Retry</button></div>}
-          </div>
-        </section>
-      ) : activeTool === "reports" ? (
-        <section className="tool-page">
-          <button className="back-button" type="button" onClick={() => openTool(null)}>← Back to Dashboard</button>
-          <div className="tool-page-header"><div><h1>Weekly Reports 📈</h1><p>Turn your recent study activity into a progress report.</p></div></div>
-          <div className="tool-page-content"><WeeklyReports accessToken={accessToken} /></div>
-        </section>
-      ) : activeTool === "learning" ? (
-<section className="tool-page">
-
-  <button
-    className="back-button"
-    type="button"
-    onClick={() => openTool(null)}
-  >
-    ← Back to Dashboard
-  </button>
-
-  <div className="tool-page-header">
-    <div>
-      <h1>Learning Center 🎓</h1>
-      <p>Review your learning, strengthen weak areas, and keep improving.</p>
-    </div>
-  </div>
-
-  <div className="tool-page-content">
-    <LearningCenter accessToken={accessToken} />
-  </div>
-
-</section>
-) : activeTool === "notes" ? (
-<section className="tool-page">
-
-  <button
-    className="back-button"
-    type="button"
-    onClick={() => openTool(null)}
-  >
-    ← Back to Dashboard
-  </button>
-
-  <div className="tool-page-header">
-    <div>
-      <h1>Notes & PDFs 📄</h1>
-      <p>Upload, organize, and study your notes with AI.</p>
-    </div>
-  </div>
-
-  <div className="tool-page-content">
-    <Notes accessToken={accessToken} />
-  </div>
-
-</section>
-) : activeTool === "flashcards" ? (
-<section className="tool-page">
-
-  <button
-    className="back-button"
-    type="button"
-    onClick={() => openTool(null)}
-  >
-    ← Back to Dashboard
-  </button>
-
-  <div className="tool-page-header">
-    <div>
-      <h1>Flashcards 🃏</h1>
-      <p>Build your memory with smart flashcard reviews.</p>
-    </div>
-  </div>
-
-  <div className="tool-page-content">
-    <Flashcards accessToken={accessToken} />
-  </div>
-
-</section>
-) : activeTool === "progress" ? (
-  <section className="tool-page">
-
-    <button
-      className="back-button"
-      type="button"
-      onClick={() => openTool(null)}
-    >
-      ← Back to Dashboard
-    </button>
-
-    <div className="tool-page-header">
-      <div>
-        <h1>Progress 📊</h1>
-        <p>Track your study activity and see how you're improving.</p>
-      </div>
-    </div>
-
-    <div className="tool-page-content">
-      <Progress accessToken={accessToken} />
-    </div>
-
-  </section>
-) : activeTool === "dashboard" ? (
-  <section className="tool-page">
-
-    <button
-      className="back-button"
-      type="button"
-      onClick={() => openTool(null)}
-    >
-      ← Back to Dashboard
-    </button>
-
-    <div className="tool-page-header">
-      <div>
-        <h1>Dashboard 📊</h1>
-        <p>Stay on top of your learning and track your progress.</p>
-      </div>
-    </div>
-
-    <div className="tool-page-content">
-      <Dashboard accessToken={accessToken} />
-    </div>
-
-  </section>
-) : activeTool === "quiz" ? (
-  <section className="tool-page">
-    <button
-      className="back-button"
-      onClick={() => openTool(null)}
-    >
-      ← Back to Dashboard
-    </button>
-
-    <div className="tool-page-header">
-      <div>
-        <h1>Quiz 📝</h1>
-        <p>Test your knowledge and improve your understanding.</p>
-      </div>
-    </div>
-
-    <div className="tool-page-content quiz-page-content">
-  <div className="quiz-intro">
-    <div className="quiz-intro-icon">🧠</div>
-    <div>
-      <h2>Challenge Yourself</h2>
-      <p>
-        Test what you know, find your weak areas, and improve your
-        understanding.
-      </p>
-    </div>
-  </div>
-
-  <Quiz key={session.user.id} accessToken={accessToken} userId={session.user.id} />
-</div>
-  </section>
-) : activeTool === "plan" ? (
-  <section className="tool-page">
-
-    <button
-      className="back-button"
-      onClick={() => openTool(null)}
-    >
-      ← Back to Dashboard
-    </button>
-
-    <div className="tool-page-header">
-      <div>
-        <h1>Study Plan 📅</h1>
-        <p>Organize your learning and study smarter.</p>
-      </div>
-    </div>
-
-    <div className="tool-page-content">
-      <StudyPlanGenerator accessToken={accessToken} />
-    </div>
-
-  </section>
-) : activeTool === "task" ? (
-  <section className="tool-page">
-
-    <button
-      className="back-button"
-      onClick={() => openTool(null)}
-    >
-      ← Back to Dashboard
-    </button>
-
-    <div className="tool-page-header">
-      <div>
-        <h1>Task Planner ✅</h1>
-        <p>Keep track of your study tasks and stay organized.</p>
-      </div>
-    </div>
-
-    <div className="tool-page-content">
-      <TaskPlanner accessToken={accessToken} />
-    </div>
-
-  </section>
+      ) : TOOL_PAGES[activeTool] ? (
+        <ToolPage {...TOOL_PAGES[activeTool]}
+          onBack={() => openTool(activeTool === "admin" ? "profile" : null)}
+          backLabel={activeTool === "admin" ? "Profile" : "Home"}>
+          {activeTool === "admin" && (adminCheckedToken !== accessToken ? <p role="status">Checking administrator access…</p> : isAdmin ? (
+            <AdminDashboard accessToken={accessToken} section={route.section} onNavigate={navigate} />
+          ) : <div className="operations-error" role="alert"><p>{adminError || "Administrator access is required for this page."}</p><button type="button" onClick={() => window.location.reload()}>Retry</button></div>)}
+          {activeTool === "reports" && <WeeklyReports accessToken={accessToken} />}
+          {activeTool === "learning" && <LearningCenter accessToken={accessToken} />}
+          {activeTool === "notes" && <Notes accessToken={accessToken} />}
+          {activeTool === "flashcards" && <Flashcards accessToken={accessToken} />}
+          {activeTool === "progress" && <Progress accessToken={accessToken} />}
+          {activeTool === "dashboard" && <Dashboard accessToken={accessToken} />}
+          {activeTool === "quiz" && <Quiz key={session.user.id} accessToken={accessToken} userId={session.user.id} />}
+          {activeTool === "plan" && <StudyPlanGenerator accessToken={accessToken} />}
+          {activeTool === "task" && <TaskPlanner accessToken={accessToken} />}
+        </ToolPage>
 ) : (
   <>   
 
         <header className="topbar study-header">
 
           <div className="study-header-copy">
-            <div className="study-header-eyebrow">
-              {activeTool === "chat" && (
-                <button className="study-header-back" type="button" onClick={() => openTool(null)}>
-                  <span aria-hidden="true">←</span> Back
-                </button>
-              )}
-              <span>STUDY AI <span aria-hidden="true">/</span> {activeTool === "chat" ? "CHAT" : "YOUR WORKSPACE"}</span>
-            </div>
-            <h1>{activeTool === "chat" ? "Let’s work through it." : "Make room for your next idea."}</h1>
-            <p>{activeTool === "chat" ? "Ask, explore, and understand at your own pace." : "Your notes, practice and progress. All in one place."}</p>
+            <h1>Your study space</h1>
+            <p>Pick up where you left off, or try something new.</p>
           </div>
 
 
@@ -844,7 +661,7 @@ function App() {
 
           <div className="tool-heading">
             <h2>Study Tools</h2>
-            <p>Make your study sessions more productive.</p>
+            <p>What would you like to work on?</p>
           </div>
 
           <div className="tool-grid">
@@ -856,7 +673,7 @@ function App() {
     role="button"
     tabIndex="0"
 >
-              <div className="tool-icon">📝</div>
+              <div className="tool-icon"><ChatIcon name="compose" /></div>
               <div>
                 <h3>Quiz</h3>
                 <p>Test your knowledge.</p>
@@ -870,7 +687,7 @@ function App() {
   role="button"
   tabIndex="0"
 >
-              <div className="tool-icon">📅</div>
+              <div className="tool-icon"><ChatIcon name="calendar" /></div>
               <div>
                 <h3>Study Plan</h3>
                 <p>Organize your learning.</p>
@@ -884,7 +701,7 @@ function App() {
   role="button"
   tabIndex="0"
 >
-              <div className="tool-icon">✅</div>
+              <div className="tool-icon"><ChatIcon name="tasks" /></div>
               <div>
                 <h3>Task Planner</h3>
                 <p>Stay on top of your tasks.</p>
@@ -895,8 +712,8 @@ function App() {
 
           <div className="more-tools-section">
 <div className="tool-heading">
-  <h2>More Study Tools</h2>
-  <p>Explore more ways to improve your learning.</p>
+  <h2>Keep exploring</h2>
+  <p>Your notes, revision and progress are here when you need them.</p>
 </div>
 
 <div className="tool-grid">
@@ -908,7 +725,7 @@ function App() {
     role="button"
     tabIndex="0"
   >
-    <div className="tool-icon">📄</div>
+    <div className="tool-icon"><ChatIcon name="file" /></div>
     <div>
       <h3>Notes & PDFs</h3>
       <p>Upload and study your notes.</p>
@@ -922,7 +739,7 @@ function App() {
     role="button"
     tabIndex="0"
   >
-    <div className="tool-icon">🃏</div>
+    <div className="tool-icon"><ChatIcon name="cards" /></div>
     <div>
       <h3>Flashcards</h3>
       <p>Review and remember key ideas.</p>
@@ -936,7 +753,7 @@ function App() {
     role="button"
     tabIndex="0"
   >
-    <div className="tool-icon">📊</div>
+    <div className="tool-icon"><ChatIcon name="chart" /></div>
     <div>
       <h3>Progress</h3>
       <p>Track your study progress.</p>
@@ -950,7 +767,7 @@ function App() {
     role="button"
     tabIndex="0"
   >
-    <div className="tool-icon">📈</div>
+    <div className="tool-icon"><ChatIcon name="chart" /></div>
     <div>
       <h3>Dashboard</h3>
       <p>View your learning statistics.</p>
@@ -964,7 +781,7 @@ function App() {
     role="button"
     tabIndex="0"
   >
-    <div className="tool-icon">🎓</div>
+    <div className="tool-icon"><ChatIcon name="book" /></div>
     <div>
       <h3>Learning Center</h3>
       <p>Review, practice, and set goals.</p>
@@ -978,7 +795,7 @@ function App() {
     role="button"
     tabIndex="0"
   >
-    <div className="tool-icon">📈</div>
+    <div className="tool-icon"><ChatIcon name="chart" /></div>
     <div>
       <h3>Weekly Reports</h3>
       <p>Generate and review study summaries.</p>
@@ -993,7 +810,7 @@ function App() {
       role="button"
       tabIndex="0"
     >
-      <div className="tool-icon">⚙️</div>
+      <div className="tool-icon"><ChatIcon name="panel" /></div>
       <div>
         <h3>Admin Dashboard</h3>
         <p>Monitor the backend and queued jobs.</p>

@@ -113,7 +113,6 @@ function AdminDashboard({ accessToken, section = "Overview", onNavigate }) {
 
   return (
     <div className="operations-page admin-console">
-      <div className="admin-banner"><small>STUDY AI / ADMINISTRATION</small><h2>Your control centre</h2><p>Accounts, allowances and service operations in one workspace.</p></div>
       <nav className="admin-nav" aria-label="Administration">{["Overview", "Users", "Activity", "Answer reports", "Jobs", "Server events"].map((name) => <button type="button" key={name} disabled={Boolean(busyJob)} aria-current={section === name ? "page" : undefined} onClick={() => { setSection(name); setConfirmation(null); }}>{name}</button>)}</nav>
       {section === "Answer reports" ? <AnswerReportsAdmin accessToken={accessToken} /> : section === "Users" ? <UserManagement accessToken={accessToken} onUsersChanged={() => loadAdminData(0)} /> : section === "Activity" ? <AdminActivity accessToken={accessToken} /> : <>
       <div className="operations-toolbar">
@@ -230,3 +229,4 @@ function AdminDashboard({ accessToken, section = "Overview", onNavigate }) {
 }
 
 export default AdminDashboard;
+

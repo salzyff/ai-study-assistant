@@ -19,16 +19,17 @@ export default function ChangePassword({ onBack }) {
     } catch (e) { setError(e.message); } finally { setLoading(false); }
   }
   return <section className="tool-page profile-page">
-    <button className="back-button" type="button" onClick={onBack}>← Back to Profile</button>
+    <button className="back-button" type="button" onClick={onBack}>← Profile</button>
     <div className="tool-page-header"><div><h1>Change password</h1>
       <p>Confirm through your email before choosing a new password.</p></div></div>
     <div className="profile-card password-page-card">
       <p>We’ll send a secure link to your account email. Open that link to set your new password.</p>
       <button className="auth-submit" type="button" disabled={loading || sent} onClick={sendConfirmation}>
-        {loading ? "Sending…" : sent ? "Email sent" : "Send confirmation email"}
+        {loading ? "Sending…" : sent ? "Email sent" : "Email me a reset link"}
       </button>
       {sent && <p className="profile-success" role="status">Check your inbox and spam folder. After changing your password, sign in again on your devices.</p>}
       {error && <p className="auth-error" role="alert">{error}</p>}
     </div>
   </section>;
 }
+

@@ -1,3 +1,4 @@
+import ChatIcon from "./ChatIcon";
 import { useCallback, useEffect, useState } from "react";
 import { apiRequest } from "../api";
 
@@ -49,7 +50,7 @@ function WeeklyReports({ accessToken }) {
         accessToken,
         method: "POST",
       });
-      setMessage(data.message || "Weekly report queued. It will be prepared in the background.");
+      setMessage(data.message || "Your report is on its way. You can keep studying while it’s prepared.");
       await loadReports(0);
     } catch (requestError) {
       setError(requestError.message);
@@ -62,11 +63,11 @@ function WeeklyReports({ accessToken }) {
     <div className="operations-page">
       <div className="operations-toolbar">
         <div>
-          <h2>Weekly study reports</h2>
-          <p>Create a report without waiting on the page while it is prepared.</p>
+          <h2>Your reports</h2>
+          <p>Your report will appear here when it’s ready. You can keep studying in the meantime.</p>
         </div>
         <button className="operations-primary" type="button" onClick={createReport} disabled={creating}>
-          {creating ? "Queuing…" : "Generate weekly report"}
+          {creating ? "Getting it ready…" : "Create this week’s report"}
         </button>
       </div>
 
@@ -77,9 +78,9 @@ function WeeklyReports({ accessToken }) {
         <div className="operations-empty">Loading reports…</div>
       ) : reports.length === 0 ? (
         <div className="operations-empty">
-          <span>📈</span>
+          <span><ChatIcon name="chart" /></span>
           <h3>No weekly reports yet</h3>
-          <p>Generate one to summarize your tasks, quizzes, and study activity.</p>
+          <p>Create a report to see your tasks, quizzes and study time together.</p>
         </div>
       ) : (
         <div className="operations-list">
@@ -120,3 +121,4 @@ function WeeklyReports({ accessToken }) {
 }
 
 export default WeeklyReports;
+

@@ -152,7 +152,7 @@ function Quiz({ accessToken, userId, initialTopic }) {
   
         <div className="quiz-app-title">
           <div>
-            <h2>Interactive Quiz</h2>
+            <h2>Start a quiz</h2>
             <p>Choose a subject and challenge yourself.</p>
           </div>
   
@@ -160,12 +160,11 @@ function Quiz({ accessToken, userId, initialTopic }) {
         </div>
   
         {!quiz && draft && <div className="study-next"><p>Unfinished quiz: {draft.quiz.topic}</p><button type="button" disabled={loading} onClick={resume}>Resume saved quiz</button><button type="button" disabled={loading} onClick={()=>{persist(null);setDraft(null);}}>Discard saved quiz</button></div>}
-        {!quiz && !draft && <PracticeTopics accessToken={accessToken} onPractice={t=>{setSubject(t.subject);setTopic(t.topic);setAdaptive(true);document.getElementById("quiz-topic")?.focus();}} />}
         {!quiz && !draft && (
           <form className="quiz-generator" onSubmit={generateQuiz}>
   
             <div className="quiz-field">
-              <label htmlFor="quiz-subject">📚 Subject</label>
+              <label htmlFor="quiz-subject">Subject</label>
   
               <select
                 id="quiz-subject"
@@ -183,7 +182,7 @@ function Quiz({ accessToken, userId, initialTopic }) {
             </div>
   
             <div className="quiz-field">
-              <label htmlFor="quiz-topic">📖 Topic</label>
+              <label htmlFor="quiz-topic">Topic</label>
   
               <input
                 id="quiz-topic"
@@ -197,9 +196,9 @@ function Quiz({ accessToken, userId, initialTopic }) {
               />
             </div>
   
-            <div className="quiz-field"><label><input type="checkbox" checked={adaptive} onChange={e=>setAdaptive(e.target.checked)}/> Adaptive difficulty from my results</label></div>
+            <div className="quiz-field quiz-adaptive-field"><label><input type="checkbox" checked={adaptive} onChange={e=>setAdaptive(e.target.checked)}/> Use my results to adjust the difficulty</label></div>
             <div className="quiz-field">
-              <label htmlFor="question-count">🔢 Questions</label>
+              <label htmlFor="question-count">Questions</label>
   
               <input
                 id="question-count"
@@ -218,12 +217,14 @@ function Quiz({ accessToken, userId, initialTopic }) {
               type="submit"
               disabled={loading}
             >
-              {loading ? "Generating..." : "✨ Generate Quiz"}
+              {loading ? "Generating..." : "Make a quiz"}
             </button>
   
           </form>
         )}
   
+        {!quiz && !draft && <PracticeTopics accessToken={accessToken} onPractice={t=>{setSubject(t.subject);setTopic(t.topic);setAdaptive(true);document.getElementById("quiz-topic")?.focus();}} />}
+
         {saveNotice && <p role="status">{saveNotice}</p>}
         {error && (
           <div className="quiz-error">
@@ -372,3 +373,4 @@ function Quiz({ accessToken, userId, initialTopic }) {
 }
 
 export default Quiz;
+

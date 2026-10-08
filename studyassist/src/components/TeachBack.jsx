@@ -1,3 +1,4 @@
+import ChatIcon from "./ChatIcon";
 import { useState } from "react";
 import { apiRequest } from "../api";
 import { SUBJECTS } from "../constants/subjects";
@@ -81,20 +82,19 @@ function TeachBack({ accessToken }) {
 
       {/* Header */}
       <div className="teach-back-header">
-        <h2>Teach-Back Mode 🎓</h2>
+        <h2>Try explaining it</h2>
         <p>
-          Explain what you have learned and let the system check your
-          understanding.
+          Put an idea into your own words and get feedback on what’s clear and what’s missing.
         </p>
       </div>
 
       {/* Teach-back card */}
       <div className="teach-card">
         <div className="teach-card-header">
-          <div className="teach-icon">🧠</div>
+          <div className="teach-icon"><ChatIcon name="sparkle" /></div>
 
           <div>
-            <h3>Explain a Topic</h3>
+            <h3>Explain a topic</h3>
             <p>Teach the topic in your own words.</p>
           </div>
         </div>
@@ -151,7 +151,7 @@ function TeachBack({ accessToken }) {
             type="submit"
             disabled={loading}
           >
-            🧠 Check My Explanation
+            Check my explanation
           </button>
         </form>
 
@@ -164,7 +164,7 @@ function TeachBack({ accessToken }) {
               </span>
             </h3>
 
-            <h4>✅ What You Explained Well</h4>
+            <h4>What you explained well</h4>
 
             <ul>
               {teachResult.strengths.map((item) => (
@@ -172,7 +172,7 @@ function TeachBack({ accessToken }) {
               ))}
             </ul>
 
-            <h4>📌 Knowledge Gaps</h4>
+            <h4>What to revisit</h4>
 
             <ul>
               {teachResult.gaps.map((item) => (
@@ -201,10 +201,10 @@ function TeachBack({ accessToken }) {
       {/* Marking scheme */}
       <div className="teach-card">
         <div className="teach-card-header">
-          <div className="teach-icon">📝</div>
+          <div className="teach-icon"><ChatIcon name="compose" /></div>
 
           <div>
-            <h3>Marking-Scheme Mode</h3>
+            <h3>Check a written answer</h3>
             <p>
               Compare your written answer against the required marking
               points.
@@ -231,7 +231,7 @@ function TeachBack({ accessToken }) {
 
           <div className="teach-field">
             <label htmlFor="student-answer">
-              Your Written Answer
+              Your answer
             </label>
 
             <textarea

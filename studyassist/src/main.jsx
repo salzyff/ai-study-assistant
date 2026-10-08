@@ -5,6 +5,7 @@ import './index.css'
 import App from './App.jsx'
 import './style-fixes.css'
 import './chat-layout.css'
+import './workspace-pages.css'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

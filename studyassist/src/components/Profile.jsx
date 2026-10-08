@@ -32,7 +32,7 @@ function Profile({ user, preferences, onPreferencesChange, onBack, onLogout, onC
         data: { display_name: displayName.trim() || "Student" },
       });
       if (updateError) throw updateError;
-      setMessage("Profile saved successfully.");
+      setMessage("Saved. Your name is up to date.");
     } catch (updateError) {
       setError(updateError.message);
     } finally {
@@ -42,7 +42,7 @@ function Profile({ user, preferences, onPreferencesChange, onBack, onLogout, onC
 
   return (
     <section className="tool-page profile-page profile-redesign">
-      <button className="back-button" type="button" onClick={onBack}>← Back to Dashboard</button>
+      <button className="back-button" type="button" onClick={onBack}>← Home</button>
       <header className="profile-overview"><div className="profile-monogram" aria-hidden="true">{(user.user_metadata?.display_name || user.email || "S").charAt(0).toUpperCase()}</div><div><h1>Your profile</h1><p>{user.email}</p></div></header>
 
       <div className="profile-layout">
@@ -96,3 +96,4 @@ function Profile({ user, preferences, onPreferencesChange, onBack, onLogout, onC
 }
 
 export default Profile;
+

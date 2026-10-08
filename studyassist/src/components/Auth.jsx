@@ -1,3 +1,4 @@
+import ChatIcon from "./ChatIcon";
 import { useState } from "react";
 import { supabase } from "../supabase";
 import PasswordEye from "./PasswordEye";
@@ -92,13 +93,13 @@ function Auth({ onBack, authMode = "login", onNavigate }) {
 
         {onBack && <button className="auth-back" type="button" onClick={onBack}>← Back to Study AI</button>}
 
-        <div className="auth-logo">🧠</div>
+        <div className="auth-logo"><ChatIcon name="sparkle" size={26} /></div>
 
         <h1>Study AI</h1>
 
         <h2>
-          {authMode === "login" && "Welcome back! Log in to continue."}
-          {authMode === "signup" && "Create your account and start learning."}
+          {authMode === "login" && "Good to see you. Sign in to pick up where you left off."}
+          {authMode === "signup" && "Create an account for your notes, chats and practice."}
           {authMode === "forgot" && "Enter your email to reset your password."}
         </h2>
 
@@ -279,3 +280,4 @@ function Auth({ onBack, authMode = "login", onNavigate }) {
 }
 
 export default Auth;
+

@@ -1,3 +1,4 @@
+import ChatIcon from "./ChatIcon";
 import { useCallback, useEffect, useState } from "react";
 import { apiRequest } from "../api";
 import "./LearningReview.css";
@@ -55,7 +56,7 @@ function LearningReview({ accessToken }) {
   const queueSections = [
     {
       key: "dueFlashcards",
-      icon: "🃏",
+      icon: "cards",
       title: "Due Flashcards",
       items: queue?.dueFlashcards || [],
       render: (card) => (
@@ -66,7 +67,7 @@ function LearningReview({ accessToken }) {
     },
     {
       key: "openTasks",
-      icon: "📋",
+      icon: "tasks",
       title: "Open Tasks",
       items: queue?.openTasks || [],
       render: (task) => (
@@ -80,8 +81,8 @@ function LearningReview({ accessToken }) {
     },
     {
       key: "weakTopics",
-      icon: "📈",
-      title: "Weak Topics",
+      icon: "chart",
+      title: "Topics to revisit",
       items: queue?.weakTopics || [],
       render: (topic) => (
         <>
@@ -92,8 +93,8 @@ function LearningReview({ accessToken }) {
     },
     {
       key: "mistakes",
-      icon: "⚠️",
-      title: "Unresolved Mistakes",
+      icon: "alert",
+      title: "Mistakes to review",
       items: queue?.mistakes || [],
       render: (mistake) => (
         <>
@@ -104,7 +105,7 @@ function LearningReview({ accessToken }) {
     },
     {
       key: "activeGoals",
-      icon: "🎯",
+      icon: "target",
       title: "Active Goals",
       items: queue?.activeGoals || [],
       render: (goal) => (
@@ -121,13 +122,13 @@ function LearningReview({ accessToken }) {
       <div className="learning-review-header">
         <div>
           <span className="learning-review-label">
-            SMART REVISION
+            TODAY’S REVIEW
           </span>
 
-          <h2>Daily Revision Queue 📝</h2>
+          <h2>What to revisit</h2>
 
           <p>
-            Focus on the areas that need your attention most.
+            Here are a few things you can work on next.
           </p>
         </div>
 
@@ -152,7 +153,7 @@ function LearningReview({ accessToken }) {
               <div className="review-card-header">
                 <div className="review-card-title">
                   <span className="review-card-icon">
-                    {section.icon}
+                    <ChatIcon name={section.icon} />
                   </span>
 
                   {section.title}

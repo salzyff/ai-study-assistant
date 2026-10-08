@@ -1,3 +1,4 @@
+import ChatIcon from "./ChatIcon";
 import { useCallback, useEffect, useState } from "react";
 import { apiRequest } from "../api";
 import { SUBJECTS } from "../constants/subjects";
@@ -102,32 +103,11 @@ function Progress({ accessToken }) {
     <section className="progress-app">
 
       {/* HEADER */}
-      <div className="progress-app-header">
-
-        <div>
-          
-
-          <h2>Study Progress</h2>
-
-          <p>
-            Track your study activity, quiz performance,
-            sessions, and learning streak.
-          </p>
-        </div>
-
-        <div className="progress-header-icon">
-          📈
-        </div>
-
-      </div>
-
       {/* FILTER */}
       <div className="progress-filter-card">
 
         <div className="progress-filter-info">
-          <span className="progress-filter-icon">
-            📅
-          </span>
+          <span className="progress-filter-icon"><ChatIcon name="calendar" /></span>
 
           <div>
             <strong>Progress period</strong>
@@ -142,6 +122,7 @@ function Progress({ accessToken }) {
 
           <select
             id="progress-days"
+            aria-label="Progress period"
             value={days}
             onChange={(event) =>
               setDays(Number(event.target.value))
@@ -172,9 +153,7 @@ function Progress({ accessToken }) {
           <div className="progress-stats-grid">
 
             <div className="progress-stat-card">
-              <div className="progress-stat-icon">
-                ✅
-              </div>
+              <div className="progress-stat-icon"><ChatIcon name="check" /></div>
 
               <div>
                 <span>Tasks completed</span>
@@ -186,9 +165,7 @@ function Progress({ accessToken }) {
             </div>
 
             <div className="progress-stat-card">
-              <div className="progress-stat-icon">
-                📝
-              </div>
+              <div className="progress-stat-icon"><ChatIcon name="compose" /></div>
 
               <div>
                 <span>Quiz average</span>
@@ -199,9 +176,7 @@ function Progress({ accessToken }) {
             </div>
 
             <div className="progress-stat-card">
-              <div className="progress-stat-icon">
-                🏆
-              </div>
+              <div className="progress-stat-icon"><ChatIcon name="target" /></div>
 
               <div>
                 <span>Best quiz</span>
@@ -212,9 +187,7 @@ function Progress({ accessToken }) {
             </div>
 
             <div className="progress-stat-card">
-              <div className="progress-stat-icon">
-                ⏱️
-              </div>
+              <div className="progress-stat-icon"><ChatIcon name="clock" /></div>
 
               <div>
                 <span>Minutes studied</span>
@@ -225,9 +198,7 @@ function Progress({ accessToken }) {
             </div>
 
             <div className="progress-stat-card">
-              <div className="progress-stat-icon">
-                🔥
-              </div>
+              <div className="progress-stat-icon"><ChatIcon name="calendar" /></div>
 
               <div>
                 <span>Study streak</span>
@@ -239,9 +210,7 @@ function Progress({ accessToken }) {
             </div>
 
             <div className="progress-stat-card">
-              <div className="progress-stat-icon">
-                🧠
-              </div>
+              <div className="progress-stat-icon"><ChatIcon name="sparkle" /></div>
 
               <div>
                 <span>Study sessions</span>
@@ -256,9 +225,7 @@ function Progress({ accessToken }) {
           {/* FLASHCARD SUMMARY */}
           <div className="progress-summary-card">
 
-            <div className="progress-summary-icon">
-              🃏
-            </div>
+            <div className="progress-summary-icon"><ChatIcon name="cards" /></div>
 
             <div>
               <strong>Flashcards remembered</strong>
@@ -283,15 +250,13 @@ function Progress({ accessToken }) {
                 </p>
               </div>
 
-              <span className="progress-section-icon">
-                📚
-              </span>
+              <span className="progress-section-icon"><ChatIcon name="book" /></span>
             </div>
 
             {progress.subjectProgress.length === 0 ? (
 
               <div className="progress-empty">
-                <div>📚</div>
+                <div><ChatIcon name="book" /></div>
 
                 <strong>No subject data yet</strong>
 
@@ -372,9 +337,7 @@ function Progress({ accessToken }) {
             </p>
           </div>
 
-          <span className="progress-section-icon">
-            ⏱️
-          </span>
+          <span className="progress-section-icon"><ChatIcon name="clock" /></span>
 
         </div>
 
@@ -457,7 +420,7 @@ function Progress({ accessToken }) {
           >
             {loading
               ? "Starting..."
-              : "▶ Start Study Session"}
+              : "Start a session"}
           </button>
 
         </form>
@@ -487,7 +450,7 @@ function Progress({ accessToken }) {
         {sessions.length === 0 ? (
 
           <div className="progress-empty">
-            <div>📚</div>
+            <div><ChatIcon name="book" /></div>
 
             <strong>No sessions yet</strong>
 

@@ -1,3 +1,4 @@
+import ChatIcon from "./ChatIcon";
 import { useCallback, useEffect, useState } from "react";
 import { apiRequest } from "../api";
 import { SUBJECTS } from "../constants/subjects";
@@ -152,8 +153,8 @@ function TaskPlanner({ accessToken }) {
     <section className="task-app">
       <div className="task-app-title">
         <div>
-          <h2>Task Planner</h2>
-          <p>Create, manage, and track your study tasks.</p>
+          <h2>Add a task</h2>
+          <p>Write down what you want to get done.</p>
         </div>
         
       </div>
@@ -186,19 +187,19 @@ function TaskPlanner({ accessToken }) {
             <textarea id="task-description" value={description} onChange={(event) => setDescription(event.target.value)} maxLength="2000" placeholder="Add some details about this task..." rows="4" />
           </div>
         </div>
-        <button className="create-task-button" type="submit" disabled={loading}>{loading ? "Creating..." : "＋ Create Task"}</button>
+        <button className="create-task-button" type="submit" disabled={loading}>{loading ? "Creating..." : "Add task"}</button>
       </form>
 
       {error && <div className="task-error">⚠️ {error}</div>}
 
       <div className="task-list-section">
         <div className="task-list-header">
-          <div><h3>Your Study Tasks</h3><p>Stay organized and keep your study goals moving.</p></div>
+          <div><h3>Your tasks</h3><p>Tick off a task when you finish it.</p></div>
           <div className="task-count">{tasks.length} {tasks.length === 1 ? "Task" : "Tasks"}</div>
         </div>
 
         {tasks.length === 0 ? (
-          <div className="empty-tasks"><div className="empty-task-icon">📚</div><h3>No tasks yet</h3><p>Create your first study task to get started.</p></div>
+          <div className="empty-tasks"><div className="empty-task-icon"><ChatIcon name="book" /></div><h3>No tasks yet</h3><p>Add something small you can work on today.</p></div>
         ) : (
           <div className="task-list">
             {tasks.map((task) => (
@@ -268,3 +269,4 @@ function TaskPlanner({ accessToken }) {
 }
 
 export default TaskPlanner;
+
