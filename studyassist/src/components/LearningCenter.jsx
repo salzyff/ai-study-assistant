@@ -1,3 +1,4 @@
+import ChatIcon from "./ChatIcon";
 import { useState } from "react";
 import LearningReview from "./LearningReview";
 import QuestionBank from "./QuestionBank";
@@ -11,25 +12,25 @@ function LearningCenter({ accessToken }) {
   const tabs = [
     {
       id: "review",
-      icon: "📝",
+      icon: "compose",
       title: "Daily Review",
       description: "Review mistakes and progress",
     },
     {
       id: "teach",
-      icon: "🎓",
+      icon: "book",
       title: "Teach-Back",
       description: "Explain what you've learned",
     },
     {
       id: "bank",
-      icon: "📚",
+      icon: "cards",
       title: "Question Bank",
       description: "Practice questions",
     },
     {
       id: "goals",
-      icon: "🎯",
+      icon: "target",
       title: "Study Goals",
       description: "Set and track your goals",
     },
@@ -37,18 +38,6 @@ function LearningCenter({ accessToken }) {
 
   return (
     <section className="learning-center">
-      <div className="learning-center-header">
-        <span className="learning-center-label">
-          YOUR STUDY HUB
-        </span>
-
-        <h1>Learning Center 📚</h1>
-
-        <p>
-          Practice, review, set goals, and strengthen your understanding.
-        </p>
-      </div>
-
       <div className="learning-center-nav">
         {tabs.map((tab) => (
           <button
@@ -57,10 +46,11 @@ function LearningCenter({ accessToken }) {
             className={`learning-center-tab ${
               section === tab.id ? "active" : ""
             }`}
+            aria-pressed={section === tab.id}
             onClick={() => setSection(tab.id)}
           >
             <span className="learning-center-tab-icon">
-              {tab.icon}
+              <ChatIcon name={tab.icon} />
             </span>
 
             <span className="learning-center-tab-title">

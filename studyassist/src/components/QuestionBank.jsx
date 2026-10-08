@@ -157,7 +157,7 @@ function QuestionBank({ accessToken }) {
   return (
     <section className="learning-utility">
       <h2>Practice question bank</h2>
-      <p>AI questions are newly generated exam-style practice, not copied official past papers.</p>
+      <p>Choose a topic for some original exam-style practice. These questions aren’t official past papers.</p>
       <form onSubmit={generateQuestions}>
         <p>
           <label htmlFor="bank-subject">Subject</label><br />
@@ -166,8 +166,8 @@ function QuestionBank({ accessToken }) {
           </select>
         </p>
         <p><label htmlFor="bank-topic">Topic</label><br /><input id="bank-topic" value={topic} onChange={(event) => setTopic(event.target.value)} maxLength="200" required /></p>
-        <p><label htmlFor="exam-type">Exam style label</label><br /><input id="exam-type" value={examType} onChange={(event) => setExamType(event.target.value)} maxLength="80" required /></p>
-        <p><label htmlFor="exam-year">Year label (optional)</label><br /><input id="exam-year" type="number" min="1900" max="2100" value={examYear} onChange={(event) => setExamYear(event.target.value)} /></p>
+        <p><label htmlFor="exam-type">Exam style</label><br /><input id="exam-type" value={examType} onChange={(event) => setExamType(event.target.value)} maxLength="80" required /></p>
+        <p><label htmlFor="exam-year">Year (optional)</label><br /><input id="exam-year" type="number" min="1900" max="2100" value={examYear} onChange={(event) => setExamYear(event.target.value)} /></p>
         <p>
           <label htmlFor="bank-difficulty">Difficulty</label><br />
           <select id="bank-difficulty" value={difficulty} onChange={(event) => setDifficulty(event.target.value)}>
@@ -180,7 +180,7 @@ function QuestionBank({ accessToken }) {
 
       <h3>Saved questions</h3>
       <p>Select up to 10 questions, then start a quiz.</p>
-      {bank.length === 0 ? <p>No saved questions.</p> : bank.map((question) => (
+      {bank.length === 0 ? <p>No questions saved yet. Make a few above, or add your own below.</p> : bank.map((question) => (
         <article key={question.id}>
           <label><input type="checkbox" checked={selectedIds.includes(question.id)} onChange={() => toggleQuestion(question.id)} /> Select</label>
           <p><strong>{question.subject} — {question.topic} — {question.exam_type} {question.exam_year || ""} — {question.difficulty}</strong></p>
@@ -215,7 +215,7 @@ function QuestionBank({ accessToken }) {
       )}
 
       <hr />
-      <h3>Add a question you may legally store</h3>
+      <h3>Add your own question</h3>
       <form onSubmit={saveAuthorizedQuestion}>
         <p><label htmlFor="manual-question">Question</label><br /><textarea id="manual-question" value={manualQuestion} onChange={(event) => setManualQuestion(event.target.value)} required /></p>
         {manualOptions.map((option, index) => (
@@ -224,7 +224,7 @@ function QuestionBank({ accessToken }) {
         <p><label htmlFor="manual-correct">Correct option number</label><br /><select id="manual-correct" value={manualCorrect} onChange={(event) => setManualCorrect(event.target.value)}><option value="0">1</option><option value="1">2</option><option value="2">3</option><option value="3">4</option></select></p>
         <p><label htmlFor="manual-explanation">Explanation</label><br /><textarea id="manual-explanation" value={manualExplanation} onChange={(event) => setManualExplanation(event.target.value)} required /></p>
         <p><label><input type="checkbox" checked={hasRights} onChange={(event) => setHasRights(event.target.checked)} required /> I created this question or have permission to store it.</label></p>
-        <button type="submit" disabled={loading || !hasRights}>Save authorized question</button>
+        <button type="submit" disabled={loading || !hasRights}>Save question</button>
       </form>
       {loading && <p>Working...</p>}
       {error && <p role="alert">Error: {error}</p>}
@@ -233,3 +233,4 @@ function QuestionBank({ accessToken }) {
 }
 
 export default QuestionBank;
+

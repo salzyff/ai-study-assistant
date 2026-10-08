@@ -54,8 +54,8 @@ function StudyPlanGenerator({ accessToken }) {
 
       <div className="plan-app-title">
         <div>
-          <h2>AI Study Plan Generator</h2>
-          <p>Create a personalized study schedule for your exam.</p>
+          <h2>Build your schedule</h2>
+          <p>Choose your topics and when you need to be ready.</p>
         </div>
 
         
@@ -64,7 +64,7 @@ function StudyPlanGenerator({ accessToken }) {
       <form className="plan-generator" onSubmit={generatePlan}>
 
         <div className="plan-field">
-          <label htmlFor="plan-subject">📚 Subject</label>
+          <label htmlFor="plan-subject">Subject</label>
 
           <select
             id="plan-subject"
@@ -82,7 +82,7 @@ function StudyPlanGenerator({ accessToken }) {
         </div>
 
         <div className="plan-field plan-topics-field">
-          <label htmlFor="plan-topics">📖 Topics</label>
+          <label htmlFor="plan-topics">Topics</label>
 
           <textarea
             id="plan-topics"
@@ -96,7 +96,7 @@ function StudyPlanGenerator({ accessToken }) {
         </div>
 
         <div className="plan-field">
-          <label htmlFor="exam-date">📆 Exam Date</label>
+          <label htmlFor="exam-date">Exam date</label>
 
           <input
             id="exam-date"
@@ -111,7 +111,7 @@ function StudyPlanGenerator({ accessToken }) {
         </div>
 
         <div className="plan-field">
-          <label htmlFor="available-days">⏱️ Study Days</label>
+          <label htmlFor="available-days">Study days</label>
 
           <input
             id="available-days"
@@ -130,7 +130,7 @@ function StudyPlanGenerator({ accessToken }) {
           type="submit"
           disabled={loading}
         >
-          {loading ? "Generating..." : "✨ Generate Study Plan"}
+          {loading ? "Generating..." : "Build my plan"}
         </button>
 
       </form>
@@ -199,3 +199,4 @@ function StudyPlanGenerator({ accessToken }) {
 }
 
 export default StudyPlanGenerator;
+

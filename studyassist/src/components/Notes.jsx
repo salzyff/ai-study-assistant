@@ -1,3 +1,4 @@
+import ChatIcon from "./ChatIcon";
 import { useCallback, useEffect, useState } from "react";
 import ReactMarkdown from "./MathMarkdown";
 import { apiRequest } from "../api";
@@ -159,20 +160,10 @@ function Notes({ accessToken }) {
   );
 
   return (
-    <section className="tool-page">
-      <div className="tool-page-header">
-        <div>
-          <h1>Notes & PDF Study</h1>
-          <p>
-            Upload your study materials and let AI help you understand them.
-          </p>
-        </div>
-      </div>
-
-      <div className="tool-page-content notes-app">
+    <section className="notes-app">
         <div className="notes-app-title">
           <div>
-            <h2>Study Materials</h2>
+            <h2>Add your materials</h2>
             <p>Upload PDFs, text files, or Markdown notes.</p>
           </div>
 
@@ -181,16 +172,17 @@ function Notes({ accessToken }) {
 
         <form className="notes-generator" onSubmit={uploadNotes}>
           <div className="notes-upload-box">
-            <div className="notes-upload-icon">📤</div>
+            <div className="notes-upload-icon"><ChatIcon name="file" /></div>
 
             <div>
               <h3>Upload your notes</h3>
-              <p>Supported formats: PDF, TXT, and Markdown</p>
-              <small className="upload-security-note">🛡️ File type and content are checked before saving.</small>
+              <p>Choose a PDF, text file or Markdown document.</p>
+              <small className="upload-security-note">Scanned PDFs aren’t supported yet.</small>
             </div>
 
             <input
               id="note-file"
+              aria-label="Choose a study file"
               name="file"
               type="file"
               accept=".pdf,.txt,.md,application/pdf,text/plain,text/markdown"
@@ -233,7 +225,7 @@ function Notes({ accessToken }) {
             type="submit"
             disabled={loading}
           >
-            {loading ? "Uploading..." : "Upload Notes"}
+            {loading ? "Uploading..." : "Upload notes"}
           </button>
         </form>
 
@@ -250,7 +242,7 @@ function Notes({ accessToken }) {
         <div className="saved-notes-section">
           <div className="saved-notes-header">
             <div>
-              <h3>Saved Notes</h3>
+              <h3>Saved notes</h3>
               <p>Your uploaded study materials</p>
             </div>
 
@@ -261,7 +253,7 @@ function Notes({ accessToken }) {
 
           {notes.length === 0 ? (
             <div className="empty-notes">
-              <div className="empty-notes-icon">📚</div>
+              <div className="empty-notes-icon"><ChatIcon name="book" /></div>
               <h3>No notes yet</h3>
               <p>
                 Upload your first study material to get started.
@@ -283,7 +275,7 @@ function Notes({ accessToken }) {
                     disabled={loading}
                     onClick={() => { setSelectedNoteId(note.id); setAnswer(""); setQuestion(""); }}
                   >
-                    <span className="note-icon">📄</span>
+                    <span className="note-icon"><ChatIcon name="file" /></span>
 
                     <span className="note-info">
                       <strong>{note.title}</strong>
@@ -318,6 +310,7 @@ function Notes({ accessToken }) {
 
               <select
                 id="selected-note"
+                aria-label="Selected study material"
                 disabled={loading}
                 value={selectedNoteId}
                 onChange={(event) => {
@@ -361,7 +354,7 @@ function Notes({ accessToken }) {
                   type="submit"
                   disabled={loading || !question.trim()}
                 >
-                  {loading ? "Working..." : "Ask Notes"}
+                  {loading ? "Working..." : "Ask a question"}
                 </button>
 
                 <button
@@ -370,7 +363,7 @@ function Notes({ accessToken }) {
                   onClick={summarizeNotes}
                   disabled={loading}
                 >
-                  ✨ Summarize Notes
+                  Summarize these notes
                 </button>
               </div>
             </form>
@@ -380,11 +373,11 @@ function Notes({ accessToken }) {
         {answer && (
           <article className="notes-ai-response">
             <div className="ai-response-header">
-              <div className="ai-response-icon">🤖</div>
+              <div className="ai-response-icon"><ChatIcon name="sparkle" /></div>
 
               <div>
                 <span>AI STUDY ASSISTANT</span>
-                <h3>AI Response</h3>
+                <h3>Your answer</h3>
               </div>
             </div>
 
@@ -393,9 +386,10 @@ function Notes({ accessToken }) {
             </div>
           </article>
         )}
-      </div>
+
     </section>
   );
 }
 
 export default Notes;
+

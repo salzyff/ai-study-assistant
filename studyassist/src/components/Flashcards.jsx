@@ -1,3 +1,4 @@
+import ChatIcon from "./ChatIcon";
 import { useCallback, useEffect, useState } from "react";
 import { apiRequest } from "../api";
 import { SUBJECTS } from "../constants/subjects";
@@ -175,23 +176,10 @@ function Flashcards({ accessToken }) {
   const card = cards[currentCard];
 
   return (
-    <section className="tool-page">
-
-
-      <div className="tool-page-header">
-        <div>
-          <h1>Flashcards 🃏</h1>
-          <p>
-            Create smart flashcards and strengthen your memory.
-          </p>
-        </div>
-      </div>
-
-      <div className="tool-page-content flashcards-app">
-
+    <section className="flashcards-app">
         <div className="flashcards-app-title">
           <div>
-            <h2>Build Your Flashcards</h2>
+            <h2>Make a set of cards</h2>
             <p>
               Generate cards from your notes or choose a topic to study.
             </p>
@@ -209,7 +197,7 @@ function Flashcards({ accessToken }) {
 
             <div className="flashcards-field flashcards-full-field">
               <label htmlFor="flashcard-note">
-                📄 Generate from uploaded notes
+                Generate from uploaded notes
               </label>
 
               <select
@@ -238,7 +226,7 @@ function Flashcards({ accessToken }) {
               <>
                 <div className="flashcards-field">
                   <label htmlFor="flashcard-subject">
-                    📚 Subject
+                    Subject
                   </label>
 
                   <select
@@ -261,7 +249,7 @@ function Flashcards({ accessToken }) {
 
                 <div className="flashcards-field">
                   <label htmlFor="flashcard-topic">
-                    🎯 Topic
+                    Topic
                   </label>
 
                   <input
@@ -280,7 +268,7 @@ function Flashcards({ accessToken }) {
 
             <div className="flashcards-field">
               <label htmlFor="flashcard-count">
-                🔢 Number of cards
+                Number of cards
               </label>
 
               <input
@@ -306,7 +294,7 @@ function Flashcards({ accessToken }) {
           >
             {loading
               ? "Generating..."
-              : "✨ Generate Flashcards"}
+              : "Make flashcards"}
           </button>
 
         </form>
@@ -340,9 +328,7 @@ function Flashcards({ accessToken }) {
 
           {sets.length === 0 ? (
             <div className="empty-flashcards">
-              <div className="empty-flashcards-icon">
-                🃏
-              </div>
+              <div className="empty-flashcards-icon"><ChatIcon name="cards" /></div>
 
               <h3>No flashcard sets yet</h3>
 
@@ -371,7 +357,7 @@ function Flashcards({ accessToken }) {
                     onClick={() => openSet(set.id)}
                   >
                     <span className="flashcards-set-icon">
-                      🃏
+                      <ChatIcon name="cards" />
                     </span>
 
                     <span className="flashcards-set-info">
@@ -491,9 +477,10 @@ function Flashcards({ accessToken }) {
           </div>
         )}
 
-      </div>
+
     </section>
   );
 }
 
 export default Flashcards;
+

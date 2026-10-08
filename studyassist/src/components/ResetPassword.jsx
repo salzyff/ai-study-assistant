@@ -1,3 +1,4 @@
+import ChatIcon from "./ChatIcon";
 import { useState } from "react";
 import { supabase } from "../supabase";
 
@@ -39,7 +40,7 @@ function ResetPassword({ onComplete }) {
   return (
     <main className="auth-container">
       <div className="auth-card">
-        <div className="auth-logo">🧠</div>
+        <div className="auth-logo"><ChatIcon name="sparkle" size={26} /></div>
         <h1>Reset password</h1>
         <h2>Choose a new password for your account.</h2>
 
@@ -82,3 +83,4 @@ function ResetPassword({ onComplete }) {
 }
 
 export default ResetPassword;
+
