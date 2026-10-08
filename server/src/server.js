@@ -32,6 +32,7 @@ import {
 } from "./middleware/aiUsage.js";
 import { RequestValidationError, uuidField } from "./utils/validation.js";
 import { paginationResult, parsePagination } from "./utils/pagination.js";
+import { CHAT_HISTORY_MESSAGE_LIMIT, formatConversationHistory } from "./utils/conversationMemory.js";
 import { logger, requestLogger } from "./utils/logger.js";
 import { startBackgroundWorker } from "./services/backgroundJobs.js";
 
@@ -357,7 +358,7 @@ app.post("/api/chat/stream", async (req, res) => {
         .select("role, content, created_at")
         .eq("conversation_id", conversationId)
         .order("created_at", { ascending: false })
-        .limit(20);
+        .limit(CHAT_HISTORY_MESSAGE_LIMIT);
       if (historyError) throw historyError;
       history = (recentMessages || []).reverse();
     } else {
@@ -378,15 +379,13 @@ app.post("/api/chat/stream", async (req, res) => {
     res.flushHeaders();
     sendStreamEvent(res, "meta", { sessionId: conversationId, subject: subject.trim(), mode });
 
-    const historyText = history
-      .map((item) => `${item.role === "student" ? "Student" : "Assistant"}: ${String(item.content).slice(0, 2500)}`)
-      .join("\n\n");
+    const historyText = formatConversationHistory(history);
     const prompt = `You are an AI study assistant for secondary-school students.
 Subject: ${subject.trim()}
 Use simple language, teach for understanding, show formulas and working for calculations, and stay focused on the subject.
 Study mode: ${mode}
 Mode instructions: ${studyModes[mode]}
-${historyText ? `Recent conversation:\n${historyText}\n` : ""}
+${historyText ? `Recent conversation context (oldest retained first):\n${historyText}\n` : ""}
 Student: ${cleanMessage}`;
 
     const stream = await ai.models.generateContentStream({
